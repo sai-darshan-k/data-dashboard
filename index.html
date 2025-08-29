@@ -1,0 +1,796 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Agriculture Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl">
+    <h1 class="text-2xl font-bold text-center mb-6">Smart Agriculture Dashboard</h1>
+    <div id="sensor-data" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">🌡️ Temperature</h2>
+        <p id="temperature" class="text-xl">-- °C</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">💧 Humidity</h2>
+        <p id="humidity" class="text-xl">-- %</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">🌧️ Rain Intensity</h2>
+        <p id="rain_intensity" class="text-xl">--</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">🌱 Soil Moisture</h2>
+        <p id="soil_moisture" class="text-xl">-- %</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">🌬️ Wind Speed</h2>
+        <p id="wind_speed" class="text-xl">-- m/s</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <h2 class="text-lg font-semibold">🚶 Motion Detected</h2>
+        <p id="motion_detected" class="text-xl">--</p>
+      </div>
+    </div>
+    <p id="last-updated" class="text-center text-gray-500 mt-4">Last updated: --</p>
+    <p id="error-message" class="text-center text-red-500 mt-2 hidden"></p>
+  </div>
+
+  <script>
+    const INFLUXDB_URL = 'https://us-east-1-1.aws.cloud2.influxdata.com';
+    const INFLUXDB_TOKEN = 'nZ49M1MTGbHtRCrc2OJhx-kVIBWuwvereT-o1mcq2COz3urUNuUuIIMjysObK8oOEHn8352w7LKFyrX8PQpdsA==';
+    const INFLUXDB_ORG = 'Agri';
+    const INFLUXDB_BUCKET = 'smart_agri';
+
+    async function fetchSensorData() {
+      const query = `
+        from(bucket: "${INFLUXDB_BUCKET}")
+          |> range(start: -10m)
+          |> filter(fn: (r) => r._measurement == "sensor_data" and r.location == "field")
+          |> last()
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+      `;
+      const url = `${INFLUXDB_URL}/api/v2/query?org=${INFLUXDB_ORG}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${INFLUXDB_TOKEN}`,
+            'Content-Type': 'application/vnd.flux',
+            'Accept': 'application/csv'
+          },
+          body: query
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const text = await response.text();
+        const lines = text.split('\n').filter(line => line.length > 0);
+        if (lines.length < 2) {
+          throw new Error('No data returned');
+        }
+
+        const header = lines[0].split(',');
+        const data = lines[1].split(',');
+
+        const latestData = {};
+        header.forEach((key, index) => {
+          if (key.startsWith('_') || key === 'result' || key === 'table' || key === 'location') return;
+          latestData[key] = data[index];
+        });
+
+        // Update UI
+        document.getElementById('temperature').textContent = 
+          latestData.temperature ? `${parseFloat(latestData.temperature).toFixed(1)} °C` : '-- °C';
+        document.getElementById('humidity').textContent = 
+          latestData.humidity ? `${parseFloat(latestData.humidity).toFixed(1)} %` : '-- %';
+        document.getElementById('rain_intensity').textContent = 
+          latestData.rain_intensity ? getRainStatus(parseInt(latestData.rain_intensity)) : '--';
+        document.getElementById('soil_moisture').textContent = 
+          latestData.soil_moisture ? `${parseInt(latestData.soil_moisture)} %` : '-- %';
+        document.getElementById('wind_speed').textContent = 
+          latestData.wind_speed ? `${parseFloat(latestData.wind_speed).toFixed(2)} m/s` : '-- m/s';
+        document.getElementById('motion_detected').textContent = 
+          latestData.motion_detected ? (latestData.motion_detected === '1' ? 'DETECTED' : 'NOT DETECTED') : '--';
+        
+        document.getElementById('last-updated').textContent = 
+          `Last updated: ${new Date().toLocaleString()}`;
+        document.getElementById('error-message').classList.add('hidden');
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('error-message').textContent = 
+          'Failed to fetch data from InfluxDB. Please try again later.';
+        document.getElementById('error-message').classList.remove('hidden');
+      }
+    }
+
+    function getRainStatus(value) {
+      if (value < 1500) return 'Heavy Rain';
+      if (value < 3000) return 'Light Rain';
+      return 'No Rain';
+    }
+
+    // Fetch data initially and every 6 seconds
+    fetchSensorData();
+    setInterval(fetchSensorData, 6000);
+  </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Agriculture Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .metric-card {
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    }
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-online { background-color: #10b981; }
+    .status-warning { background-color: #f59e0b; }
+    .status-offline { background-color: #ef4444; }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+    }
+  </style>
+</head>
+<body class="gradient-bg min-h-screen p-4">
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <h1 class="text-4xl font-bold text-white mb-2">🌾 Smart Agriculture Dashboard</h1>
+    <p class="text-white/80">Real-time monitoring & historical trends</p>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="glass-effect rounded-xl p-4 mb-6 max-w-7xl mx-auto">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <span id="status-indicator" class="status-indicator status-online"></span>
+        <span id="status-text" class="text-gray-700 font-medium">System Online</span>
+      </div>
+      <div class="text-sm text-gray-600">
+        <span id="last-updated">Last updated: --</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Range Selector -->
+  <div class="max-w-7xl mx-auto mb-6">
+    <div class="glass-effect rounded-xl p-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-800">Historical Trends</h2>
+        <div class="flex items-center space-x-4">
+          <label for="time-range" class="text-sm font-medium text-gray-700">Time Range:</label>
+          <select id="time-range" class="bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="1d">Last 24 Hours</option>
+            <option value="3d">Last 3 Days</option>
+            <option value="7d">Last Week</option>
+            <option value="30d">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Custom Date Range (hidden by default) -->
+      <div id="custom-range" class="mt-4 hidden">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
+            <input type="datetime-local" id="start-date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">To</label>
+            <input type="datetime-local" id="end-date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <button id="apply-custom" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+          Apply Custom Range
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Metrics Grid -->
+  <div class="max-w-7xl mx-auto mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Temperature -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Temperature</h3>
+          <span class="text-2xl">🌡️</span>
+        </div>
+        <p id="temperature" class="text-3xl font-bold text-blue-600">-- °C</p>
+        <p class="text-sm text-gray-600 mt-1">Current reading</p>
+      </div>
+
+      <!-- Humidity -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Humidity</h3>
+          <span class="text-2xl">💧</span>
+        </div>
+        <p id="humidity" class="text-3xl font-bold text-cyan-600">-- %</p>
+        <p class="text-sm text-gray-600 mt-1">Air moisture level</p>
+      </div>
+
+      <!-- Rain Intensity -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Rain Status</h3>
+          <span class="text-2xl">🌧️</span>
+        </div>
+        <p id="rain_intensity" class="text-2xl font-bold text-indigo-600">--</p>
+        <p class="text-sm text-gray-600 mt-1">Precipitation level</p>
+      </div>
+
+      <!-- Soil Moisture -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Soil Moisture</h3>
+          <span class="text-2xl">🌱</span>
+        </div>
+        <p id="soil_moisture" class="text-3xl font-bold text-green-600">-- %</p>
+        <p class="text-sm text-gray-600 mt-1">Ground hydration</p>
+      </div>
+
+      <!-- Wind Speed -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Wind Speed</h3>
+          <span class="text-2xl">🌬️</span>
+        </div>
+        <p id="wind_speed" class="text-3xl font-bold text-purple-600">-- m/s</p>
+        <p class="text-sm text-gray-600 mt-1">Air movement</p>
+      </div>
+
+      <!-- Motion Detection -->
+      <div class="metric-card rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">Motion</h3>
+          <span class="text-2xl">🚶</span>
+        </div>
+        <p id="motion_detected" class="text-xl font-bold text-orange-600">--</p>
+        <p class="text-sm text-gray-600 mt-1">Activity status</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Temperature Chart -->
+      <div class="glass-effect rounded-xl p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🌡️ Temperature Trend</h3>
+        <div class="chart-container">
+          <canvas id="temperatureChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Humidity Chart -->
+      <div class="glass-effect rounded-xl p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">💧 Humidity Trend</h3>
+        <div class="chart-container">
+          <canvas id="humidityChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Soil Moisture Chart -->
+      <div class="glass-effect rounded-xl p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🌱 Soil Moisture Trend</h3>
+        <div class="chart-container">
+          <canvas id="soilMoistureChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Wind Speed Chart -->
+      <div class="glass-effect rounded-xl p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🌬️ Wind Speed Trend</h3>
+        <div class="chart-container">
+          <canvas id="windSpeedChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div id="error-message" class="max-w-7xl mx-auto mt-6 hidden">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+      <span id="error-text">Failed to fetch data from InfluxDB. Please try again later.</span>
+    </div>
+  </div>
+
+  <script>
+    const INFLUXDB_URL = 'https://us-east-1-1.aws.cloud2.influxdata.com';
+    const INFLUXDB_TOKEN = 'nZ49M1MTGbHtRCrc2OJhx-kVIBWuwvereT-o1mcq2COz3urUNuUuIIMjysObK8oOEHn8352w7LKFyrX8PQpdsA==';
+    const INFLUXDB_ORG = 'Agri';
+    const INFLUXDB_BUCKET = 'smart_agri';
+
+    let charts = {};
+    let currentTimeRange = '1d';
+
+    // Mock data for testing
+    const mockCurrentData = {
+      temperature: '25.5',
+      humidity: '65.2',
+      soil_moisture: '50',
+      rain_intensity: '3500',
+      wind_speed: '3.2',
+      motion_detected: '0'
+    };
+
+    const mockHistoricalData = Array(24).fill().map((_, i) => ({
+      _time: new Date(Date.now() - i * 3600 * 1000).toISOString(),
+      temperature: (20 + Math.random() * 10).toFixed(1),
+      humidity: (60 + Math.random() * 20).toFixed(1),
+      soil_moisture: (40 + Math.random() * 30).toFixed(0),
+      wind_speed: (2 + Math.random() * 5).toFixed(2)
+    }));
+
+    // Chart configurations
+    const chartConfigs = {
+      temperature: {
+        canvas: 'temperatureChart',
+        color: 'rgb(59, 130, 246)',
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        unit: '°C'
+      },
+      humidity: {
+        canvas: 'humidityChart',
+        color: 'rgb(6, 182, 212)',
+        borderColor: 'rgb(6, 182, 212)',
+        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+        unit: '%'
+      },
+      soil_moisture: {
+        canvas: 'soilMoistureChart',
+        color: 'rgb(34, 197, 94)',
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        unit: '%'
+      },
+      wind_speed: {
+        canvas: 'windSpeedChart',
+        color: 'rgb(147, 51, 234)',
+        borderColor: 'rgb(147, 51, 234)',
+        backgroundColor: 'rgba(147, 51, 234, Abbas0.1)',
+        unit: 'm/s'
+      }
+    };
+
+    function getTimeRangeStart() {
+      const now = new Date();
+      switch(currentTimeRange) {
+        case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        case '3d': return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        case 'custom':
+          const startDate = document.getElementById('start-date').value;
+          return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        default: return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      }
+    }
+
+    function getTimeRangeEnd() {
+      if (currentTimeRange === 'custom') {
+        const endDate = document.getElementById('end-date').value;
+        return endDate ? new Date(endDate) : new Date();
+      }
+      return new Date();
+    }
+
+    function getAggregationWindow() {
+      switch(currentTimeRange) {
+        case '1d': return '5m';
+        case '3d': return '15m';
+        case '7d': return '1h';
+        case '30d': return '4h';
+        case 'custom': return '1h';
+        default: return '5m';
+      }
+    }
+
+    async function fetchSensorData(range = '-10m') {
+      const query = `
+        from(bucket: "${INFLUXDB_BUCKET}")
+          |> range(start: ${range})
+          |> filter(fn: (r) => r._measurement == "sensor_data" and r.location == "field")
+          |> last()
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+      `;
+      const url = `${INFLUXDB_URL}/api/v2/query?org=${INFLUXDB_ORG}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${INFLUXDB_TOKEN}`,
+            'Content-Type': 'application/vnd.flux',
+            'Accept': 'application/csv'
+          },
+          body: query
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const text = await response.text();
+        const lines = text.split('\n').filter(line => line.length > 0 && !line.startsWith('#'));
+        if (lines.length < 2) {
+          throw new Error('No data returned');
+        }
+
+        const header = lines[0].split(',');
+        const data = lines[1].split(',');
+
+        const latestData = {};
+        header.forEach((key, index) => {
+          if (key.startsWith('_') || key === 'result' || key === 'table' || key === 'location') return;
+          latestData[key] = data[index];
+        });
+
+        console.log(`Current data from range ${range}:`, latestData);
+        return latestData;
+      } catch (error) {
+        console.error(`Error fetching current data from range ${range}:`, error);
+        return null;
+      }
+    }
+
+    async function getLatestCurrentData() {
+      let latestData = await fetchSensorData('-10m');
+      if (!latestData || Object.keys(latestData).length === 0) {
+        latestData = await fetchSensorData('-1d');
+      }
+      if (!latestData || Object.keys(latestData).length === 0) {
+        latestData = await fetchSensorData('-7d');
+      }
+      if (!latestData || Object.keys(latestData).length === 0) {
+        console.warn('No recent data found, using mock data');
+        updateStatus('warning', 'No Recent Data - Using Mock');
+        return mockCurrentData;
+      }
+      updateStatus('online', 'System Online');
+      return latestData;
+    }
+
+    async function fetchHistoricalData() {
+      const startTime = getTimeRangeStart();
+      const endTime = getTimeRangeEnd();
+      
+      const query = `
+        from(bucket: "${INFLUXDB_BUCKET}")
+          |> range(start: ${startTime.toISOString()}, stop: ${endTime.toISOString()})
+          |> filter(fn: (r) => r._measurement == "sensor_data" and r.location == "field")
+          |> aggregateWindow(every: ${getAggregationWindow()}, fn: mean, createEmpty: false)
+          |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+      `;
+      
+      try {
+        const response = await fetch(`${INFLUXDB_URL}/api/v2/query?org=${INFLUXDB_ORG}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${INFLUXDB_TOKEN}`,
+            'Content-Type': 'application/vnd.flux',
+            'Accept': 'application/csv'
+          },
+          body: query
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const text = await response.text();
+        const lines = text.split('\n').filter(line => line.length > 0 && !line.startsWith('#'));
+        if (lines.length < 2) {
+          throw new Error('No historical data returned');
+        }
+
+        const header = lines[0].split(',');
+        const data = lines.slice(1).map(line => {
+          const row = line.split(',');
+          const dataPoint = {};
+          header.forEach((key, index) => {
+            if (row[index]) dataPoint[key] = row[index];
+          });
+          return dataPoint;
+        });
+
+        console.log('Historical data:', data);
+        return data.length > 0 ? data : mockHistoricalData;
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+        updateStatus('warning', 'Historical Data Error - Using Mock');
+        return mockHistoricalData;
+      }
+    }
+
+    function updateCurrentMetrics(latestData) {
+      document.getElementById('temperature').textContent = 
+        latestData.temperature ? `${parseFloat(latestData.temperature).toFixed(1)} °C` : '-- °C';
+      document.getElementById('humidity').textContent = 
+        latestData.humidity ? `${parseFloat(latestData.humidity).toFixed(1)} %` : '-- %';
+      document.getElementById('rain_intensity').textContent = 
+        latestData.rain_intensity ? getRainStatus(parseInt(latestData.rain_intensity)) : '--';
+      document.getElementById('soil_moisture').textContent = 
+        latestData.soil_moisture ? `${parseInt(latestData.soil_moisture)} %` : '-- %';
+      document.getElementById('wind_speed').textContent = 
+        latestData.wind_speed ? `${parseFloat(latestData.wind_speed).toFixed(2)} m/s` : '-- m/s';
+      document.getElementById('motion_detected').textContent = 
+        latestData.motion_detected ? (latestData.motion_detected === '1' ? 'DETECTED' : 'NOT DETECTED') : '--';
+      
+      document.getElementById('last-updated').textContent = 
+        `Last updated: ${new Date().toLocaleString()}`;
+    }
+
+    function getRainStatus(value) {
+      if (!value || isNaN(value)) return 'Unknown';
+      if (value < 1500) return 'Heavy Rain';
+      if (value < 3000) return 'Light Rain';
+      return 'No Rain';
+    }
+
+    function updateStatus(status, message) {
+      const statusIndicator = document.getElementById('status-indicator');
+      const statusText = document.getElementById('status-text');
+      statusIndicator.className = `status-indicator status-${status}`;
+      statusText.textContent = message;
+    }
+
+    function createChart(metric, data) {
+      const config = chartConfigs[metric];
+      if (!config) return;
+
+      const canvas = document.getElementById(config.canvas);
+      if (!canvas) {
+        console.error(`Canvas not found for ${metric}`);
+        return;
+      }
+
+      const ctx = canvas.getContext('2d');
+      
+      // Destroy existing chart if it exists
+      if (charts[metric]) {
+        try {
+          charts[metric].destroy();
+          console.log(`Destroyed existing chart for ${metric}`);
+        } catch (error) {
+          console.error(`Error destroying chart for ${metric}:`, error);
+        }
+      }
+
+      // Prepare chart data
+      const chartData = data.map(point => ({
+        x: new Date(point._time),
+        y: parseFloat(point[metric]) || 0
+      })).filter(point => !isNaN(point.y));
+
+      if (chartData.length === 0) {
+        console.warn(`No valid data for ${metric} chart`);
+        return;
+      }
+
+      // Set explicit canvas dimensions
+      canvas.width = 400;
+      canvas.height = 200;
+
+      charts[metric] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: metric.replace('_', ' ').toUpperCase(),
+            data: chartData,
+            borderColor: config.borderColor,
+            backgroundColor: config.backgroundColor,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: config.color,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              titleColor: '#374151',
+              bodyColor: '#374151',
+              borderColor: config.borderColor,
+              borderWidth: 1,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y.toFixed(2)} ${config.unit}`;
+                },
+                title: function(context) {
+                  return new Date(context[0].parsed.x).toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                displayFormats: {
+                  hour: 'HH:mm',
+                  day: 'MMM DD'
+                }
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                color: '#6B7280',
+                font: { size: 11 },
+                maxTicksLimit: 10
+              }
+            },
+            y: {
+              beginAtZero: metric === 'wind_speed',
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                color: '#6B7280',
+                font: { size: 11 },
+                callback: function(value) {
+                  return `${value} ${config.unit}`;
+                }
+              }
+            }
+          }
+        }
+      });
+      console.log(`Created new chart for ${metric}`);
+    }
+
+    async function updateCharts() {
+      try {
+        const historicalData = await fetchHistoricalData();
+        
+        // Create charts for each metric
+        Object.keys(chartConfigs).forEach(metric => {
+          createChart(metric, historicalData);
+        });
+
+        hideError();
+      } catch (error) {
+        console.error('Error updating charts:', error);
+        showError('Failed to load historical data. Please check your InfluxDB configuration.');
+      }
+    }
+
+    async function updateDashboard() {
+      try {
+        // Update current metrics
+        const currentData = await getLatestCurrentData();
+        updateCurrentMetrics(currentData);
+        
+        // Update charts
+        await updateCharts();
+      } catch (error) {
+        console.error('Error updating dashboard:', error);
+        showError('Failed to fetch data from InfluxDB. Please check your connection.');
+        updateCurrentMetrics(mockCurrentData);
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('error-text').textContent = message;
+      document.getElementById('error-message').classList.remove('hidden');
+      updateStatus('offline', 'System Offline');
+    }
+
+    function hideError() {
+      document.getElementById('error-message').classList.add('hidden');
+      updateStatus('online', 'System Online');
+    }
+
+    // Event listeners
+    document.getElementById('time-range').addEventListener('change', function(e) {
+      currentTimeRange = e.target.value;
+      
+      if (currentTimeRange === 'custom') {
+        document.getElementById('custom-range').classList.remove('hidden');
+        
+        // Set default custom range to last 24 hours
+        const now = new Date();
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        document.getElementById('end-date').value = now.toISOString().slice(0, 16);
+        document.getElementById('start-date').value = yesterday.toISOString().slice(0, 16);
+      } else {
+        document.getElementById('custom-range').classList.add('hidden');
+        updateCharts();
+      }
+    });
+
+    document.getElementById('apply-custom').addEventListener('click', function() {
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+      if (startDate && endDate && new Date(startDate) < new Date(endDate)) {
+        updateCharts();
+      } else {
+        alert('Please select a valid date range (start date must be before end date).');
+      }
+    });
+
+    // Initialize dashboard
+    updateDashboard();
+    
+    // Update current data every 6 seconds
+    setInterval(async () => {
+      try {
+        const currentData = await getLatestCurrentData();
+        updateCurrentMetrics(currentData);
+      } catch (error) {
+        console.error('Error updating current data:', error);
+        updateCurrentMetrics(mockCurrentData);
+      }
+    }, 6000);
+
+    // Update charts every 30 seconds
+    let isUpdatingCharts = false;
+    setInterval(async () => {
+      if (!isUpdatingCharts) {
+        isUpdatingCharts = true;
+        try {
+          await updateCharts();
+        } finally {
+          isUpdatingCharts = false;
+        }
+      }
+    }, 30000);
+  </script>
+</body>
+</html>
