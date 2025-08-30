@@ -224,25 +224,6 @@
     let charts = {};
     let currentTimeRange = '1d';
 
-    // Mock data for testing
-    const mockCurrentData = {
-      temperature: '25.5',
-      humidity: '65.2',
-      soil_moisture: '50',
-      rain_intensity: '3500',
-      wind_speed: '3.2',
-      motion_detected: '0'
-    };
-
-    const mockHistoricalData = Array(24).fill().map((_, i) => ({
-      _time: new Date(Date.now() - i * 3600 * 1000).toISOString(),
-      temperature: (20 + Math.random() * 10).toFixed(1),
-      humidity: (60 + Math.random() * 20).toFixed(1),
-      soil_moisture: (40 + Math.random() * 30).toFixed(0),
-      wind_speed: (2 + Math.random() * 5).toFixed(2),
-      rain_intensity: (Math.random() * 4000).toFixed(0)
-    }));
-
     // Chart configurations
     const chartConfigs = {
       temperature: {
@@ -288,12 +269,12 @@
       switch(currentTimeRange) {
         case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000);
         case '3d': return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 1000);
-        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 1000);
+        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         case 'custom':
           const startDate = document.getElementById('start-date').value;
           return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 1000);
-        default: return new Date(now.getTime() - 24 * 60 * 1000);
+        default: return new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
     }
 
@@ -307,12 +288,12 @@
 
     function getAggregationWindow() {
       switch(currentTimeRange) {
-        case '1d': return '5m';
-        case '3d': return '15m';
-        case '7d': return '1h';
-        case '30d': return '4h';
-        case 'custom': return '1h';
-        default: return '5m';
+        case '1d': return '1m';
+        case '3d': return '5m';
+        case '7d': return '30m';
+        case '30d': return '1h';
+        case 'custom': return '30m';
+        default: return '1m';
       }
     }
 
@@ -392,13 +373,16 @@
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          throw new Error(`HTTP error! Status: ${response.status}, ${await response.text()}`);
         }
 
         const text = await response.text();
+        console.log('Raw InfluxDB Response:', text); // Log raw response for debugging
         const lines = text.split('\n').filter(line => line.length > 0 && !line.startsWith('#'));
+        
         if (lines.length < 2) {
-          throw new Error('No historical data returned');
+          showError(`No data available for the selected time range: ${startTime.toLocaleDateString()} to ${endTime.toLocaleDateString()}`);
+          return [];
         }
 
         const header = lines[0].split(',').map(h => h.trim());
@@ -414,11 +398,16 @@
           return dataPoint;
         });
 
-        return data.length > 0 ? data : mockHistoricalData;
+        if (data.length === 0) {
+          showError(`No data available for the selected time range: ${startTime.toLocaleDateString()} to ${endTime.toLocaleDateString()}`);
+          return [];
+        }
+
+        return data;
       } catch (error) {
         console.error('Error fetching historical data:', error);
-        updateStatus('warning', 'Historical Data Error - Using Mock');
-        return mockHistoricalData;
+        showError(`Failed to fetch historical data: ${error.message}`);
+        return [];
       }
     }
 
@@ -433,9 +422,10 @@
         latestData = await fetchSensorData('-7d');
       }
       if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
-        console.warn('No recent data found, using mock data');
-        updateStatus('offline', 'System Offline - Using Mock Data');
-        return { ...mockCurrentData, _time: new Date().toISOString() };
+        console.warn('No recent data found');
+        updateStatus('offline', 'System Offline - No Recent Data');
+        showError('No current data available within the last 7 days.');
+        return {};
       }
 
       // Check if data is recent (within last 10 minutes)
@@ -492,7 +482,10 @@
 
     function createChart(metric, data) {
       const config = chartConfigs[metric];
-      if (!config) return;
+      if (!config) {
+        console.error(`Invalid chart config for ${metric}`);
+        return;
+      }
 
       const canvas = document.getElementById(config.canvas);
       if (!canvas) {
@@ -502,6 +495,7 @@
 
       const ctx = canvas.getContext('2d');
       
+      // Destroy existing chart if it exists
       if (charts[metric]) {
         try {
           charts[metric].destroy();
@@ -513,11 +507,12 @@
 
       const chartData = data.map(point => ({
         x: new Date(point._time),
-        y: metric === 'rain_intensity' ? getRainValue(point[metric]) : parseFloat(point[metric]) || 0
-      })).filter(point => !isNaN(point.y));
+        y: metric === 'rain_intensity' ? getRainValue(point[metric]) : parseFloat(point[metric]) ? parseFloat(point[metric]).toFixed(1) : 0
+      })).filter(point => !isNaN(point.y) && point.x instanceof Date && !isNaN(point.x));
 
       if (chartData.length === 0) {
-        console.warn(`No valid data for ${metric} chart`);
+        console.warn(`No valid data points for ${metric} chart`);
+        showError(`No data available for ${metric} in the selected time range.`);
         return;
       }
 
@@ -566,7 +561,7 @@
                   if (metric === 'rain_intensity') {
                     return getRainStatus(context.parsed.y);
                   }
-                  return `${context.parsed.y.toFixed(2)} ${config.unit}`;
+                  return `${context.parsed.y} ${config.unit}`;
                 },
                 title: function(context) {
                   return new Date(context[0].parsed.x).toLocaleString();
@@ -604,7 +599,7 @@
                   if (metric === 'rain_intensity') {
                     return getRainStatus(value);
                   }
-                  return `${value} ${config.unit}`;
+                  return `${value.toFixed(1)} ${config.unit}`;
                 }
               }
             }
@@ -618,38 +613,77 @@
       try {
         const historicalData = await fetchHistoricalData();
         
+        // Clear existing charts
+        Object.keys(charts).forEach(metric => {
+          if (charts[metric]) {
+            charts[metric].destroy();
+            charts[metric] = null;
+          }
+        });
+
+        if (historicalData.length === 0) {
+          showError(`No data available for the selected time range.`);
+          return;
+        }
+
+        // Create charts only if data exists
         Object.keys(chartConfigs).forEach(metric => {
-          createChart(metric, historicalData);
+          const validData = historicalData.filter(point => point[metric] && !isNaN(parseFloat(point[metric])));
+          if (validData.length > 0) {
+            createChart(metric, historicalData);
+          } else {
+            console.warn(`No valid data for ${metric} chart`);
+          }
         });
 
         hideError();
       } catch (error) {
         console.error('Error updating charts:', error);
-        showError('Failed to load historical data. Please check your InfluxDB configuration.');
+        showError(`Failed to load historical data: ${error.message}`);
       }
     }
 
     async function updateDashboard() {
       try {
         const currentData = await getLatestCurrentData();
-        updateCurrentMetrics(currentData, currentData._time === mockCurrentData._time);
+        
+        if (Object.keys(currentData).length === 0) {
+          updateCurrentMetrics({
+            temperature: null,
+            humidity: null,
+            soil_moisture: null,
+            rain_intensity: null,
+            wind_speed: null,
+            motion_detected: null
+          }, false);
+        } else {
+          updateCurrentMetrics(currentData, false);
+        }
         
         await updateCharts();
       } catch (error) {
         console.error('Error updating dashboard:', error);
         showError('Failed to fetch data from InfluxDB. Please check your connection.');
-        updateCurrentMetrics(mockCurrentData, true);
+        updateCurrentMetrics({
+          temperature: null,
+          humidity: null,
+          soil_moisture: null,
+          rain_intensity: null,
+          wind_speed: null,
+          motion_detected: null
+        }, false);
       }
     }
 
     function showError(message) {
       document.getElementById('error-text').textContent = message;
       document.getElementById('error-message').classList.remove('hidden');
-      updateStatus('offline', 'System Offline');
+      updateStatus('warning', 'Data Unavailable');
     }
 
     function hideError() {
       document.getElementById('error-message').classList.add('hidden');
+      updateStatus('online', 'System Online');
     }
 
     document.getElementById('time-range').addEventListener('change', function(e) {
@@ -675,7 +709,7 @@
       if (startDate && endDate && new Date(startDate) < new Date(endDate)) {
         updateCharts();
       } else {
-        alert('Please select a valid date range (start date must be before end date).');
+        showError('Please select a valid date range (start date must be before end date).');
       }
     });
 
@@ -684,10 +718,29 @@
     setInterval(async () => {
       try {
         const currentData = await getLatestCurrentData();
-        updateCurrentMetrics(currentData, currentData._time === mockCurrentData._time);
+        
+        if (Object.keys(currentData).length === 0) {
+          updateCurrentMetrics({
+            temperature: null,
+            humidity: null,
+            soil_moisture: null,
+            rain_intensity: null,
+            wind_speed: null,
+            motion_detected: null
+          }, false);
+        } else {
+          updateCurrentMetrics(currentData, false);
+        }
       } catch (error) {
         console.error('Error updating current data:', error);
-        updateCurrentMetrics(mockCurrentData, true);
+        updateCurrentMetrics({
+          temperature: null,
+          humidity: null,
+          soil_moisture: null,
+          rain_intensity: null,
+          wind_speed: null,
+          motion_detected: null
+        }, false);
       }
     }, 6000);
 
@@ -701,7 +754,7 @@
           isUpdatingCharts = false;
         }
       }
-    }, 30000);
+    }, 60000);
 
     // Update current time every second
     setInterval(() => {
