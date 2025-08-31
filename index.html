@@ -271,40 +271,10 @@
     </div>
   </div>
 
-  <!-- Time Range Selector -->
-  <div class="max-w-7xl mx-auto mb-8">
-    <div class="glass-effect rounded-2xl p-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold text-gray-800">📊 Historical Trends & Analytics</h2>
-        <div class="flex items-center space-x-4">
-          <label for="time-range" class="text-sm font-semibold text-gray-700">Time Range:</label>
-          <select id="time-range" class="bg-white border-2 border-blue-200 rounded-xl px-6 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
-            <option value="1d">Last 24 Hours</option>
-            <option value="3d">Last 3 Days</option>
-            <option value="7d">Last Week</option>
-            <option value="30d">Last Month</option>
-            <option value="custom">Custom Range</option>
-          </select>
-        </div>
-      </div>
-      
-      <!-- Custom Date Range -->
-      <div id="custom-range" class="mt-6 hidden">
-        <div class="grid grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">From</label>
-            <input type="datetime-local" id="start-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">To</label>
-            <input type="datetime-local" id="end-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
-          </div>
-        </div>
-        <button id="apply-custom" class="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
-          Apply Custom Range
-        </button>
-      </div>
-    </div>
+  <!-- Current Conditions Analysis -->
+  <div class="glass-effect rounded-2xl p-6 mb-8 max-w-7xl mx-auto">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">📊 Current Conditions Analysis</h2>
+    <p id="current-analysis" class="text-gray-700">Loading analysis...</p>
   </div>
 
   <!-- Current Metrics Grid -->
@@ -418,6 +388,42 @@
             <div class="text-xs text-gray-600">Activity</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Range Selector -->
+  <div class="max-w-7xl mx-auto mb-8">
+    <div class="glass-effect rounded-2xl p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-gray-800">📊 Historical Trends & Analytics</h2>
+        <div class="flex items-center space-x-4">
+          <label for="time-range" class="text-sm font-semibold text-gray-700">Time Range:</label>
+          <select id="time-range" class="bg-white border-2 border-blue-200 rounded-xl px-6 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+            <option value="1d">Last 24 Hours</option>
+            <option value="3d">Last 3 Days</option>
+            <option value="7d">Last Week</option>
+            <option value="30d">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Custom Date Range -->
+      <div id="custom-range" class="mt-6 hidden">
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">From</label>
+            <input type="datetime-local" id="start-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">To</label>
+            <input type="datetime-local" id="end-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+          </div>
+        </div>
+        <button id="apply-custom" class="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
+          Apply Custom Range
+        </button>
       </div>
     </div>
   </div>
@@ -828,6 +834,49 @@
       
       document.getElementById('current-time').textContent = 
         `Now: ${new Date().toLocaleString()}`;
+
+      // Update analysis
+      updateAnalysis(latestData);
+    }
+
+    function updateAnalysis(latestData) {
+      let analysis = "Current conditions: ";
+      if (latestData.temperature) {
+        const temp = parseFloat(latestData.temperature);
+        analysis += `Temp ${temp.toFixed(1)}°C (${temp > 30 ? 'hot - consider irrigation' : temp < 15 ? 'cool - monitor for frost' : 'moderate'}), `;
+      } else {
+        analysis += "Temp unavailable, ";
+      }
+      if (latestData.humidity) {
+        const hum = parseFloat(latestData.humidity);
+        analysis += `Humidity ${hum.toFixed(1)}% (${hum > 80 ? 'high - risk of fungal growth' : hum < 40 ? 'low - may need watering' : 'optimal'}), `;
+      } else {
+        analysis += "Humidity unavailable, ";
+      }
+      if (latestData.soil_moisture) {
+        const soil = parseInt(latestData.soil_moisture);
+        analysis += `Soil moisture ${soil}% (${soil > 70 ? 'high' : soil < 30 ? 'low - irrigate soon' : 'good'}), `;
+      } else {
+        analysis += "Soil moisture unavailable, ";
+      }
+      if (latestData.rain_intensity) {
+        analysis += `Rain: ${getRainStatus(parseInt(latestData.rain_intensity))}, `;
+      } else {
+        analysis += "Rain unavailable, ";
+      }
+      if (latestData.wind_speed) {
+        const wind = parseFloat(latestData.wind_speed);
+        analysis += `Wind ${wind.toFixed(1)} m/s (${wind > 10 ? 'strong - secure structures' : 'calm'}), `;
+      } else {
+        analysis += "Wind unavailable, ";
+      }
+      if (latestData.motion_detected) {
+        analysis += `Motion: ${latestData.motion_detected === '1' ? 'detected - check for intruders' : 'none'}.`;
+      } else {
+        analysis += "Motion unavailable.";
+      }
+
+      document.getElementById('current-analysis').textContent = analysis.trim();
     }
 
     function getRainStatus(value) {
