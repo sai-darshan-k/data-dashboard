@@ -9,11 +9,11 @@
   <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <style>
-.gradient-bg {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%), 
-              url('./static/farm.jpg') no-repeat center center fixed;
-  background-size: cover;
-}
+    .gradient-bg {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%), 
+                  url('./static/farm.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
     
     .glass-effect {
       backdrop-filter: blur(16px);
@@ -66,6 +66,43 @@
       position: relative;
       width: 100%;
       height: 300px;
+    }
+
+    /* Responsive chart container adjustments */
+    @media (max-width: 640px) {
+      .chart-container {
+        height: 200px;
+      }
+      .metric-card {
+        padding: 1rem;
+      }
+      .analog-meter {
+        width: 150px;
+        height: 150px;
+      }
+      .wind-indicator {
+        width: 100px;
+        height: 100px;
+      }
+      .wind-needle {
+        height: 40px;
+      }
+      .rain-indicator {
+        width: 100px;
+        height: 130px;
+        border-radius: 50px;
+      }
+      .motion-detector {
+        width: 80px;
+        height: 80px;
+      }
+      .soil-wave {
+        width: 100px;
+        height: 100px;
+      }
+      h3 {
+        font-size: 1rem;
+      }
     }
 
     /* Analog Meter Styles */
@@ -251,40 +288,40 @@
     }
   </style>
 </head>
-<body class="gradient-bg min-h-screen p-4">
+<body class="gradient-bg min-h-screen p-4 sm:p-6">
   <!-- Header -->
   <div class="text-center mb-8">
-    <h1 class="text-5xl font-bold text-white mb-2 title-glow floating-animation">🌾 Christ Farm - Pilot</h1>
-    <p class="text-white/90 text-lg">Advanced IoT Monitoring & Analytics Dashboard</p>
+    <h1 class="text-4xl sm:text-5xl font-bold text-white mb-2 title-glow floating-animation">🌾 Christ Farm - Pilot</h1>
+    <p class="text-white/90 text-base sm:text-lg">Advanced IoT Monitoring & Analytics Dashboard</p>
   </div>
 
   <!-- Status Bar -->
-  <div class="glass-effect rounded-2xl p-6 mb-8 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between">
+  <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8 max-w-7xl mx-auto">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center">
         <span id="status-indicator" class="status-indicator status-online"></span>
-        <span id="status-text" class="text-gray-700 font-semibold text-lg">System Online</span>
+        <span id="status-text" class="text-gray-700 font-semibold text-base sm:text-lg">System Online</span>
       </div>
-      <div class="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-lg">
+      <div class="text-xs sm:text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-lg">
         <span id="current-time">Now: ${new Date().toLocaleString()}</span>
       </div>
     </div>
   </div>
 
   <!-- Current Conditions Analysis -->
-  <div class="glass-effect rounded-2xl p-6 mb-8 max-w-7xl mx-auto">
-    <h2 class="text-xl font-bold text-gray-800 mb-4">📊 Current Conditions Analysis</h2>
-    <p id="current-analysis" class="text-gray-700">Loading analysis...</p>
+  <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8 max-w-7xl mx-auto">
+    <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">📊 Current Conditions Analysis</h2>
+    <p id="current-analysis" class="text-gray-700 text-sm sm:text-base">Loading analysis...</p>
   </div>
 
   <!-- Current Metrics Grid -->
   <div class="max-w-7xl mx-auto mb-8">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
       
       <!-- Temperature Analog Meter -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">🌡️ Temperature</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌡️ Temperature</h3>
         </div>
         <div class="analog-meter">
           <svg class="meter-svg" viewBox="0 0 200 200">
@@ -300,16 +337,16 @@
             </defs>
           </svg>
           <div class="meter-value">
-            <div id="temperature" class="text-2xl font-bold text-gray-800">-- °C</div>
+            <div id="temperature" class="text-xl sm:text-2xl font-bold text-gray-800">-- °C</div>
             <div class="meter-label">Current</div>
           </div>
         </div>
       </div>
 
       <!-- Humidity Analog Meter -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">💧 Humidity</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">💧 Humidity</h3>
         </div>
         <div class="analog-meter">
           <svg class="meter-svg" viewBox="0 0 200 200">
@@ -325,52 +362,52 @@
             </defs>
           </svg>
           <div class="meter-value">
-            <div id="humidity" class="text-2xl font-bold text-gray-800">-- %</div>
+            <div id="humidity" class="text-xl sm:text-2xl font-bold text-gray-800">-- %</div>
             <div class="meter-label">Moisture</div>
           </div>
         </div>
       </div>
 
       <!-- Rain Status Visual -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">🌧️ Rainfall</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌧️ Rainfall</h3>
         </div>
         <div class="rain-indicator mx-auto">
           <div id="rain-level" class="rain-level" style="height: 20%;"></div>
           <div class="rain-drops" id="rain-drops"></div>
           <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center">
-            <div id="rain_intensity" class="text-lg font-bold text-blue-800">--</div>
+            <div id="rain_intensity" class="text-base sm:text-lg font-bold text-blue-800">--</div>
             <div class="text-xs text-gray-600">Status</div>
           </div>
         </div>
       </div>
 
       <!-- Soil Moisture Wave -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">🌱 Soil Moisture</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌱 Soil Moisture</h3>
         </div>
-        <div class="w-32 h-32 mx-auto soil-wave flex items-center justify-center relative">
+        <div class="w-24 sm:w-32 h-24 sm:h-32 mx-auto soil-wave flex items-center justify-center relative">
           <div class="text-center z-10">
-            <div id="soil_moisture" class="text-2xl font-bold text-white">-- %</div>
-            <div class="text-sm text-white/90">Hydration</div>
+            <div id="soil_moisture" class="text-xl sm:text-2xl font-bold text-white">-- %</div>
+            <div class="text-xs sm:text-sm text-white/90">Hydration</div>
           </div>
           <div id="soil-indicator" class="absolute inset-2 rounded-full border-4 border-white/30"></div>
         </div>
       </div>
 
       <!-- Wind Speed Compass -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">🌬️ Wind Speed</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌬️ Wind Speed</h3>
         </div>
         <div class="wind-indicator">
           <div id="wind-needle" class="wind-needle"></div>
           <div class="wind-center"></div>
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center bg-white/90 rounded-full px-3 py-2">
-              <div id="wind_speed" class="text-lg font-bold text-purple-800">-- m/s</div>
+              <div id="wind_speed" class="text-base sm:text-lg font-bold text-purple-800">-- m/s</div>
               <div class="text-xs text-gray-600">Speed</div>
             </div>
           </div>
@@ -378,13 +415,13 @@
       </div>
 
       <!-- Motion Detection Radar -->
-      <div class="metric-card rounded-2xl p-8 shadow-xl">
+      <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800 mb-2">🚶 Motion Detection</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🚶 Motion Detection</h3>
         </div>
         <div id="motion-radar" class="motion-detector">
           <div class="text-center">
-            <div id="motion_detected" class="text-lg font-bold text-orange-800">--</div>
+            <div id="motion_detected" class="text-base sm:text-lg font-bold text-orange-800">--</div>
             <div class="text-xs text-gray-600">Activity</div>
           </div>
         </div>
@@ -394,12 +431,12 @@
 
   <!-- Time Range Selector -->
   <div class="max-w-7xl mx-auto mb-8">
-    <div class="glass-effect rounded-2xl p-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-bold text-gray-800">📊 Historical Trends & Analytics</h2>
+    <div class="glass-effect rounded-2xl p-4 sm:p-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800">📊 Historical Trends & Analytics</h2>
         <div class="flex items-center space-x-4">
           <label for="time-range" class="text-sm font-semibold text-gray-700">Time Range:</label>
-          <select id="time-range" class="bg-white border-2 border-blue-200 rounded-xl px-6 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+          <select id="time-range" class="bg-white border-2 border-blue-200 rounded-xl px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
             <option value="1d">Last 24 Hours</option>
             <option value="3d">Last 3 Days</option>
             <option value="7d">Last Week</option>
@@ -411,17 +448,17 @@
       
       <!-- Custom Date Range -->
       <div id="custom-range" class="mt-6 hidden">
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">From</label>
-            <input type="datetime-local" id="start-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+            <input type="datetime-local" id="start-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">To</label>
-            <input type="datetime-local" id="end-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+            <input type="datetime-local" id="end-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
           </div>
         </div>
-        <button id="apply-custom" class="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
+        <button id="apply-custom" class="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
           Apply Custom Range
         </button>
       </div>
@@ -430,10 +467,10 @@
 
   <!-- Charts Grid -->
   <div class="max-w-7xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
       <!-- Temperature Chart -->
-      <div class="glass-effect rounded-2xl p-8 shadow-xl">
-        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+      <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-blue-500 to-red-500 w-4 h-4 rounded-full mr-3"></span>
           Temperature Trend
         </h3>
@@ -443,8 +480,8 @@
       </div>
 
       <!-- Humidity Chart -->
-      <div class="glass-effect rounded-2xl p-8 shadow-xl">
-        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+      <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-cyan-500 to-blue-600 w-4 h-4 rounded-full mr-3"></span>
           Humidity Trend
         </h3>
@@ -454,8 +491,8 @@
       </div>
 
       <!-- Soil Moisture Chart -->
-      <div class="glass-effect rounded-2xl p-8 shadow-xl">
-        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+      <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-green-500 to-emerald-600 w-4 h-4 rounded-full mr-3"></span>
           Soil Moisture Trend
         </h3>
@@ -465,8 +502,8 @@
       </div>
 
       <!-- Wind Speed Chart -->
-      <div class="glass-effect rounded-2xl p-8 shadow-xl">
-        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+      <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-purple-500 to-violet-600 w-4 h-4 rounded-full mr-3"></span>
           Wind Speed Trend
         </h3>
@@ -476,8 +513,8 @@
       </div>
 
       <!-- Rainfall Chart -->
-      <div class="glass-effect rounded-2xl p-8 shadow-xl lg:col-span-2">
-        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+      <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl lg:col-span-2">
+        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-indigo-500 to-blue-600 w-4 h-4 rounded-full mr-3"></span>
           Rainfall Activity Trend
         </h3>
@@ -490,12 +527,12 @@
 
   <!-- Error Message -->
   <div id="error-message" class="max-w-7xl mx-auto mt-8 hidden">
-    <div class="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 rounded-2xl shadow-lg">
+    <div class="bg-red-50 border-2 border-red-200 text-red-800 px-4 sm:px-6 py-4 rounded-2xl shadow-lg">
       <div class="flex items-center">
-        <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-5 sm:w-6 h-5 sm:h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
         </svg>
-        <span id="error-text" class="font-semibold">Failed to fetch data from InfluxDB. Please try again later.</span>
+        <span id="error-text" class="font-semibold text-sm sm:text-base">Failed to fetch data from InfluxDB. Please try again later.</span>
       </div>
     </div>
   </div>
@@ -916,9 +953,11 @@
 
       const ctx = canvas.getContext('2d');
       
+      // Ensure previous chart is destroyed
       if (charts[metric]) {
         try {
           charts[metric].destroy();
+          delete charts[metric];
           console.log(`Destroyed existing chart for ${metric}`);
         } catch (error) {
           console.error(`Error destroying chart for ${metric}:`, error);
@@ -936,111 +975,121 @@
         return;
       }
 
-      canvas.width = 400;
-      canvas.height = 200;
+      const isMobile = window.innerWidth <= 640;
 
-      charts[metric] = new Chart(ctx, {
-        type: 'line',
-        data: {
-          datasets: [{
-            label: metric.replace('_', ' ').toUpperCase(),
-            data: chartData,
-            borderColor: config.borderColor,
-            backgroundColor: config.backgroundColor,
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 8,
-            pointBackgroundColor: config.color,
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          },
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              titleColor: '#374151',
-              bodyColor: '#374151',
+      try {
+        charts[metric] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: [{
+              label: metric.replace('_', ' ').toUpperCase(),
+              data: chartData,
               borderColor: config.borderColor,
-              borderWidth: 2,
-              cornerRadius: 12,
-              displayColors: false,
-              titleFont: { size: 14, weight: 'bold' },
-              bodyFont: { size: 13 },
-              callbacks: {
-                label: function(context) {
-                  if (metric === 'rain_intensity') {
-                    return getRainStatus(context.parsed.y);
-                  }
-                  return `${context.parsed.y} ${config.unit}`;
-                },
-                title: function(context) {
-                  return new Date(context[0].parsed.x).toLocaleString();
-                }
-              }
-            }
+              backgroundColor: config.backgroundColor,
+              borderWidth: isMobile ? 2 : 3,
+              fill: true,
+              tension: 0.4,
+              pointRadius: isMobile ? 3 : 4,
+              pointHoverRadius: isMobile ? 6 : 8,
+              pointBackgroundColor: config.color,
+              pointBorderColor: '#fff',
+              pointBorderWidth: isMobile ? 1 : 2
+            }]
           },
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                displayFormats: {
-                  hour: 'HH:mm',
-                  day: 'MMM DD'
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                titleColor: '#374151',
+                bodyColor: '#374151',
+                borderColor: config.borderColor,
+                borderWidth: isMobile ? 1 : 2,
+                cornerRadius: 12,
+                displayColors: false,
+                titleFont: { size: isMobile ? 12 : 14, weight: 'bold' },
+                bodyFont: { size: isMobile ? 11 : 13 },
+                callbacks: {
+                  label: function(context) {
+                    if (metric === 'rain_intensity') {
+                      return getRainStatus(context.parsed.y);
+                    }
+                    return `${context.parsed.y} ${config.unit}`;
+                  },
+                  title: function(context) {
+                    return new Date(context[0].parsed.x).toLocaleString();
+                  }
                 }
-              },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)',
-                lineWidth: 1
-              },
-              ticks: {
-                color: '#6B7280',
-                font: { size: 12, weight: '500' },
-                maxTicksLimit: 10
               }
             },
-            y: {
-              beginAtZero: config.beginAtZero || metric === 'wind_speed' || metric === 'rain_intensity',
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)',
-                lineWidth: 1
-              },
-              ticks: {
-                color: '#6B7280',
-                font: { size: 12, weight: '500' },
-                callback: function(value) {
-                  if (metric === 'rain_intensity') {
-                    return getRainStatus(value);
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  displayFormats: {
+                    hour: 'HH:mm',
+                    day: 'MMM DD'
                   }
-                  return `${value.toFixed(1)} ${config.unit}`;
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                  lineWidth: 1
+                },
+                ticks: {
+                  color: '#6B7280',
+                  font: { size: isMobile ? 10 : 12, weight: '500' },
+                  maxTicksLimit: isMobile ? 6 : 10
+                }
+              },
+              y: {
+                beginAtZero: config.beginAtZero || metric === 'wind_speed' || metric === 'rain_intensity',
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                  lineWidth: 1
+                },
+                ticks: {
+                  color: '#6B7280',
+                  font: { size: isMobile ? 10 : 12, weight: '500' },
+                  callback: function(value) {
+                    if (metric === 'rain_intensity') {
+                      return getRainStatus(value);
+                    }
+                    return `${value.toFixed(1)} ${config.unit}`;
+                  }
                 }
               }
             }
           }
-        }
-      });
-      console.log(`Created new chart for ${metric}`);
+        });
+        console.log(`Created new chart for ${metric}`);
+      } catch (error) {
+        console.error(`Failed to create chart for ${metric}:`, error);
+        showError(`Failed to render chart for ${metric}. Please refresh the page.`);
+      }
     }
 
     async function updateCharts() {
       try {
         const historicalData = await fetchHistoricalData();
         
+        // Destroy all existing charts
         Object.keys(charts).forEach(metric => {
           if (charts[metric]) {
-            charts[metric].destroy();
-            charts[metric] = null;
+            try {
+              charts[metric].destroy();
+              delete charts[metric];
+              console.log(`Destroyed chart for ${metric} in updateCharts`);
+            } catch (error) {
+              console.error(`Error destroying chart for ${metric} in updateCharts:`, error);
+            }
           }
         });
 
@@ -1055,6 +1104,7 @@
             createChart(metric, historicalData);
           } else {
             console.warn(`No valid data for ${metric} chart`);
+            showError(`No data available for ${metric} in the selected time range.`);
           }
         });
 
