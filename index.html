@@ -80,12 +80,15 @@
         width: 150px;
         height: 150px;
       }
-      .wind-indicator {
-        width: 100px;
-        height: 100px;
+      .wind-compass {
+        width: 150px;
+        height: 150px;
+      }
+      .wind-compass-number {
+        font-size: 10px;
       }
       .wind-needle {
-        height: 40px;
+        height: 50px;
       }
       .rain-indicator {
         width: 100px;
@@ -102,6 +105,10 @@
       }
       h3 {
         font-size: 1rem;
+      }
+      .wind-compass-point {
+        width: 6px;
+        height: 6px;
       }
     }
 
@@ -172,38 +179,99 @@
       100% { left: 100%; }
     }
 
-    /* Wind Speed Indicator */
-    .wind-indicator {
-      width: 150px;
-      height: 150px;
+    /* Wind Speed Compass */
+    .wind-compass {
+      width: 180px;
+      height: 180px;
       margin: 0 auto;
       position: relative;
       border-radius: 50%;
-      background: conic-gradient(from 0deg, #8b5cf6, #a855f7, #c084fc, #8b5cf6);
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.2));
+      border: 3px solid #8b5cf6;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
+    .wind-compass-inner {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+      position: relative;
+      border: 2px solid rgba(139, 92, 246, 0.3);
+    }
+
     .wind-needle {
       position: absolute;
       width: 4px;
-      height: 60px;
-      background: #1f2937;
+      height: 65px;
+      background: linear-gradient(to top, #7c3aed, #a855f7);
       border-radius: 2px;
       transform-origin: center bottom;
       transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      top: 25%;
+      top: 15px;
       left: 50%;
       margin-left: -2px;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .wind-needle::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -2px;
+      width: 8px;
+      height: 8px;
+      background: #7c3aed;
+      border-radius: 50%;
+      border: 2px solid #fff;
     }
 
     .wind-center {
-      width: 16px;
-      height: 16px;
-      background: #1f2937;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: #7c3aed;
       border-radius: 50%;
-      z-index: 10;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .wind-compass-number {
+      position: absolute;
+      font-size: 12px;
+      font-weight: bold;
+      color: #4c1d95;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+    }
+
+    .wind-compass-point {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #7c3aed;
+      border-radius: 50%;
+      z-index: 5;
+    }
+
+    .wind-speed-display {
+      position: absolute;
+      bottom: -35px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 2px solid #8b5cf6;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     /* Motion Detection Animation */
@@ -402,14 +470,14 @@
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌬️ Wind Speed</h3>
         </div>
-        <div class="wind-indicator">
-          <div id="wind-needle" class="wind-needle"></div>
-          <div class="wind-center"></div>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="text-center bg-white/90 rounded-full px-3 py-2">
-              <div id="wind_speed" class="text-base sm:text-lg font-bold text-purple-800">-- m/s</div>
-              <div class="text-xs text-gray-600">Speed</div>
-            </div>
+        <div class="wind-compass">
+          <div class="wind-compass-inner" id="wind-compass-inner">
+            <div id="wind-needle" class="wind-needle" style="transform: rotate(0deg);"></div>
+            <div class="wind-center"></div>
+          </div>
+          <div class="wind-speed-display">
+            <div id="wind_speed" class="text-base sm:text-lg font-bold text-purple-800">-- m/s</div>
+            <div class="text-xs text-gray-600">Speed</div>
           </div>
         </div>
       </div>
@@ -530,7 +598,7 @@
     <div class="bg-red-50 border-2 border-red-200 text-red-800 px-4 sm:px-6 py-4 rounded-2xl shadow-lg">
       <div class="flex items-center">
         <svg class="w-5 sm:w-6 h-5 sm:h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          <path fill-rule="evenodd" d="10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
         </svg>
         <span id="error-text" class="font-semibold text-sm sm:text-base">Failed to fetch data from InfluxDB. Please try again later.</span>
       </div>
@@ -586,6 +654,42 @@
       }
     };
 
+    function initializeWindCompass() {
+      const compassInner = document.getElementById('wind-compass-inner');
+      const radius = 80; // Half of 160px (inner compass width/height)
+      const labels = ['0', '5', '10', '15', '20', '25', '30'];
+      
+      // Semicircle from 5:55 o'clock (177.5°) to 11:55 o'clock (357.5°), spanning 180° clockwise
+      const startAngle = 177.5; // 5:55 o'clock
+      const endAngle = 357.5;   // 11:55 o'clock
+      const angleStep = 30;     // 180° / 6 intervals = 30° per step
+      const labelAngles = Array.from({ length: 7 }, (_, index) => startAngle + index * angleStep);
+
+      // Add points and speed labels
+      labelAngles.forEach((angle, index) => {
+        const rad = (angle * Math.PI) / 180;
+        const x = radius + radius * 0.85 * Math.cos(rad);
+        const y = radius + radius * 0.85 * Math.sin(rad);
+
+        // Add point
+        const point = document.createElement('div');
+        point.className = 'wind-compass-point';
+        point.style.left = `${x}px`;
+        point.style.top = `${y}px`;
+        compassInner.appendChild(point);
+
+        // Add label
+        const number = document.createElement('div');
+        number.className = 'wind-compass-number';
+        number.textContent = labels[index];
+        const labelX = radius + radius * 0.65 * Math.cos(rad);
+        const labelY = radius + radius * 0.65 * Math.sin(rad);
+        number.style.left = `${labelX}px`;
+        number.style.top = `${labelY}px`;
+        compassInner.appendChild(number);
+      });
+    }
+
     // Analog meter update functions
     function updateAnalogMeter(meterId, value, maxValue, minValue = 0) {
       const meter = document.getElementById(meterId);
@@ -598,16 +702,18 @@
       meter.style.strokeDasharray = `${dashArray} ${circumference}`;
     }
 
-    function updateWindNeedle(speed) {
-      const needle = document.getElementById('wind-needle');
-      if (!needle) return;
-      
-      // Map wind speed to rotation (0-20 m/s -> 0-270 degrees)
-      const maxSpeed = 20;
-      const rotation = Math.min(speed / maxSpeed * 270, 270);
-      needle.style.transform = `rotate(${rotation}deg)`;
-    }
 
+function updateWindNeedle(speed) {
+  const needle = document.getElementById('wind-needle');
+  if (!needle) return;
+  
+  // Map wind speed to rotation (0-20 m/s -> 177.5° to 357.5°)
+  const maxSpeed = 30;
+  const minAngle = 267.5; // Start at 5:55 o'clock
+  const maxAngle = 447.5; // End at 11:55 o'clock
+  const rotation = Math.min(minAngle + (speed / maxSpeed) * (maxAngle - minAngle), maxAngle);
+  needle.style.transform = `rotate(${rotation}deg)`;
+}
     function updateRainIndicator(intensity) {
       const rainLevel = document.getElementById('rain-level');
       const rainDropsContainer = document.getElementById('rain-drops');
@@ -1186,7 +1292,8 @@
       }
     });
 
-    // Initialize dashboard
+    // Initialize wind compass and dashboard
+    initializeWindCompass();
     updateDashboard();
     
     // Update current metrics every 6 seconds
