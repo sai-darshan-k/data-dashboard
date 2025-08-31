@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pilot-Christ Farm</title>
+  <title>Smart Agriculture Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <style>
-.gradient-bg {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%), 
-              url('./static/farm.jpg') no-repeat center center fixed;
-  background-size: cover;
-}
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
     .glass-effect {
       backdrop-filter: blur(10px);
       background: rgba(255, 255, 255, 0.95);
@@ -47,7 +45,7 @@
 <body class="gradient-bg min-h-screen p-4">
   <!-- Header -->
   <div class="text-center mb-8">
-    <h1 class="text-4xl font-bold text-white mb-2">🌾 Christ Farm - Pilot</h1>
+    <h1 class="text-4xl font-bold text-white mb-2">🌾 Smart Agriculture Dashboard</h1>
     <p class="text-white/80">Real-time monitoring & historical trends</p>
   </div>
 
@@ -59,7 +57,7 @@
         <span id="status-text" class="text-gray-700 font-medium">System Online</span>
       </div>
       <div class="text-sm text-gray-600">
-        <span id="current-time">Now: ${new Date().toLocaleString()}</span>
+        <span id="last-updated">Last updated: --</span>
       </div>
     </div>
   </div>
@@ -199,14 +197,6 @@
           <canvas id="windSpeedChart"></canvas>
         </div>
       </div>
-
-      <!-- Rainfall Chart -->
-      <div class="glass-effect rounded-xl p-6 shadow-lg">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">🌧️ Rainfall Trend</h3>
-        <div class="chart-container">
-          <canvas id="rainfallChart"></canvas>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -225,6 +215,24 @@
 
     let charts = {};
     let currentTimeRange = '1d';
+
+    // Mock data for testing
+    const mockCurrentData = {
+      temperature: '25.5',
+      humidity: '65.2',
+      soil_moisture: '50',
+      rain_intensity: '3500',
+      wind_speed: '3.2',
+      motion_detected: '0'
+    };
+
+    const mockHistoricalData = Array(24).fill().map((_, i) => ({
+      _time: new Date(Date.now() - i * 3600 * 1000).toISOString(),
+      temperature: (20 + Math.random() * 10).toFixed(1),
+      humidity: (60 + Math.random() * 20).toFixed(1),
+      soil_moisture: (40 + Math.random() * 30).toFixed(0),
+      wind_speed: (2 + Math.random() * 5).toFixed(2)
+    }));
 
     // Chart configurations
     const chartConfigs = {
@@ -247,22 +255,14 @@
         color: 'rgb(34, 197, 94)',
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        unit: '%',
-        beginAtZero: true
+        unit: '%'
       },
       wind_speed: {
         canvas: 'windSpeedChart',
         color: 'rgb(147, 51, 234)',
         borderColor: 'rgb(147, 51, 234)',
-        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+        backgroundColor: 'rgba(147, 51, 234, Abbas0.1)',
         unit: 'm/s'
-      },
-      rain_intensity: {
-        canvas: 'rainfallChart',
-        color: 'rgb(79, 70, 229)',
-        borderColor: 'rgb(79, 70, 229)',
-        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-        unit: ''
       }
     };
 
@@ -275,7 +275,7 @@
         case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         case 'custom':
           const startDate = document.getElementById('start-date').value;
-          return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 1000);
+          return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
         default: return new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
     }
@@ -290,12 +290,12 @@
 
     function getAggregationWindow() {
       switch(currentTimeRange) {
-        case '1d': return '1m';
-        case '3d': return '5m';
-        case '7d': return '30m';
-        case '30d': return '1h';
-        case 'custom': return '30m';
-        default: return '1m';
+        case '1d': return '5m';
+        case '3d': return '15m';
+        case '7d': return '1h';
+        case '30d': return '4h';
+        case 'custom': return '1h';
+        default: return '5m';
       }
     }
 
@@ -330,25 +330,38 @@
           throw new Error('No data returned');
         }
 
-        const header = lines[0].split(',').map(h => h.trim());
+        const header = lines[0].split(',');
         const data = lines[1].split(',');
 
         const latestData = {};
         header.forEach((key, index) => {
-          if (key.startsWith('_') || key === 'result' || key === 'table' || key === 'location') {
-            if (key === '_time') latestData[key] = data[index] ? data[index].trim() : null;
-            return;
-          }
-          const cleanedValue = data[index] ? data[index].trim() : null;
-          const cleanedKey = key === 'wind_speed\r' ? 'wind_speed' : key;
-          latestData[cleanedKey] = cleanedValue;
+          if (key.startsWith('_') || key === 'result' || key === 'table' || key === 'location') return;
+          latestData[key] = data[index];
         });
 
+        console.log(`Current data from range ${range}:`, latestData);
         return latestData;
       } catch (error) {
         console.error(`Error fetching current data from range ${range}:`, error);
         return null;
       }
+    }
+
+    async function getLatestCurrentData() {
+      let latestData = await fetchSensorData('-10m');
+      if (!latestData || Object.keys(latestData).length === 0) {
+        latestData = await fetchSensorData('-1d');
+      }
+      if (!latestData || Object.keys(latestData).length === 0) {
+        latestData = await fetchSensorData('-7d');
+      }
+      if (!latestData || Object.keys(latestData).length === 0) {
+        console.warn('No recent data found, using mock data');
+        updateStatus('warning', 'No Recent Data - Using Mock');
+        return mockCurrentData;
+      }
+      updateStatus('online', 'System Online');
+      return latestData;
     }
 
     async function fetchHistoricalData() {
@@ -375,74 +388,35 @@
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}, ${await response.text()}`);
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const text = await response.text();
-        console.log('Raw InfluxDB Response:', text); // Log raw response for debugging
         const lines = text.split('\n').filter(line => line.length > 0 && !line.startsWith('#'));
-        
         if (lines.length < 2) {
-          showError(`No data available for the selected time range: ${startTime.toLocaleDateString()} to ${endTime.toLocaleDateString()}`);
-          return [];
+          throw new Error('No historical data returned');
         }
 
-        const header = lines[0].split(',').map(h => h.trim());
+        const header = lines[0].split(',');
         const data = lines.slice(1).map(line => {
           const row = line.split(',');
           const dataPoint = {};
           header.forEach((key, index) => {
-            if (row[index]) {
-              const cleanedKey = key === 'wind_speed\r' ? 'wind_speed' : key;
-              dataPoint[cleanedKey] = row[index].trim();
-            }
+            if (row[index]) dataPoint[key] = row[index];
           });
           return dataPoint;
         });
 
-        if (data.length === 0) {
-          showError(`No data available for the selected time range: ${startTime.toLocaleDateString()} to ${endTime.toLocaleDateString()}`);
-          return [];
-        }
-
-        return data;
+        console.log('Historical data:', data);
+        return data.length > 0 ? data : mockHistoricalData;
       } catch (error) {
         console.error('Error fetching historical data:', error);
-        showError(`Failed to fetch historical data: ${error.message}`);
-        return [];
+        updateStatus('warning', 'Historical Data Error - Using Mock');
+        return mockHistoricalData;
       }
     }
 
-    async function getLatestCurrentData() {
-      let latestData = await fetchSensorData('-10m');
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
-        console.warn('No data in last 10 minutes, trying last 1 day');
-        latestData = await fetchSensorData('-1d');
-      }
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
-        console.warn('No data in last 1 day, trying last 7 days');
-        latestData = await fetchSensorData('-7d');
-      }
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
-        console.warn('No recent data found');
-        updateStatus('offline', 'System Offline - No Recent Data');
-        showError('No current data available within the last 7 days.');
-        return {};
-      }
-
-      // Check if data is recent (within last 10 minutes)
-      const dataTime = new Date(latestData._time);
-      const now = new Date();
-      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-      if (dataTime >= tenMinutesAgo) {
-        updateStatus('online', 'System Online');
-      } else {
-        updateStatus('offline', `System Offline - Last Data: ${dataTime.toLocaleString()}`);
-      }
-      return latestData;
-    }
-
-    function updateCurrentMetrics(latestData, isMock = false) {
+    function updateCurrentMetrics(latestData) {
       document.getElementById('temperature').textContent = 
         latestData.temperature ? `${parseFloat(latestData.temperature).toFixed(1)} °C` : '-- °C';
       document.getElementById('humidity').textContent = 
@@ -456,8 +430,8 @@
       document.getElementById('motion_detected').textContent = 
         latestData.motion_detected ? (latestData.motion_detected === '1' ? 'DETECTED' : 'NOT DETECTED') : '--';
       
-      document.getElementById('current-time').textContent = 
-        `Now: ${new Date().toLocaleString()}`;
+      document.getElementById('last-updated').textContent = 
+        `Last updated: ${new Date().toLocaleString()}`;
     }
 
     function getRainStatus(value) {
@@ -465,14 +439,6 @@
       if (value < 1500) return 'Heavy Rain';
       if (value < 3000) return 'Light Rain';
       return 'No Rain';
-    }
-
-    function getRainValue(value) {
-      if (!value || isNaN(value)) return 3500;
-      const val = parseInt(value);
-      if (val < 1500) return 1000; // Heavy Rain
-      if (val < 3000) return 2000; // Light Rain
-      return 3500; // No Rain
     }
 
     function updateStatus(status, message) {
@@ -484,10 +450,7 @@
 
     function createChart(metric, data) {
       const config = chartConfigs[metric];
-      if (!config) {
-        console.error(`Invalid chart config for ${metric}`);
-        return;
-      }
+      if (!config) return;
 
       const canvas = document.getElementById(config.canvas);
       if (!canvas) {
@@ -507,17 +470,18 @@
         }
       }
 
+      // Prepare chart data
       const chartData = data.map(point => ({
         x: new Date(point._time),
-        y: metric === 'rain_intensity' ? getRainValue(point[metric]) : parseFloat(point[metric]) ? parseFloat(point[metric]).toFixed(1) : 0
-      })).filter(point => !isNaN(point.y) && point.x instanceof Date && !isNaN(point.x));
+        y: parseFloat(point[metric]) || 0
+      })).filter(point => !isNaN(point.y));
 
       if (chartData.length === 0) {
-        console.warn(`No valid data points for ${metric} chart`);
-        showError(`No data available for ${metric} in the selected time range.`);
+        console.warn(`No valid data for ${metric} chart`);
         return;
       }
 
+      // Set explicit canvas dimensions
       canvas.width = 400;
       canvas.height = 200;
 
@@ -560,10 +524,7 @@
               displayColors: false,
               callbacks: {
                 label: function(context) {
-                  if (metric === 'rain_intensity') {
-                    return getRainStatus(context.parsed.y);
-                  }
-                  return `${context.parsed.y} ${config.unit}`;
+                  return `${context.parsed.y.toFixed(2)} ${config.unit}`;
                 },
                 title: function(context) {
                   return new Date(context[0].parsed.x).toLocaleString();
@@ -590,7 +551,7 @@
               }
             },
             y: {
-              beginAtZero: config.beginAtZero || metric === 'wind_speed' || metric === 'rain_intensity',
+              beginAtZero: metric === 'wind_speed',
               grid: {
                 color: 'rgba(0, 0, 0, 0.05)'
               },
@@ -598,10 +559,7 @@
                 color: '#6B7280',
                 font: { size: 11 },
                 callback: function(value) {
-                  if (metric === 'rain_intensity') {
-                    return getRainStatus(value);
-                  }
-                  return `${value.toFixed(1)} ${config.unit}`;
+                  return `${value} ${config.unit}`;
                 }
               }
             }
@@ -615,72 +573,37 @@
       try {
         const historicalData = await fetchHistoricalData();
         
-        // Clear existing charts
-        Object.keys(charts).forEach(metric => {
-          if (charts[metric]) {
-            charts[metric].destroy();
-            charts[metric] = null;
-          }
-        });
-
-        if (historicalData.length === 0) {
-          showError(`No data available for the selected time range.`);
-          return;
-        }
-
-        // Create charts only if data exists
+        // Create charts for each metric
         Object.keys(chartConfigs).forEach(metric => {
-          const validData = historicalData.filter(point => point[metric] && !isNaN(parseFloat(point[metric])));
-          if (validData.length > 0) {
-            createChart(metric, historicalData);
-          } else {
-            console.warn(`No valid data for ${metric} chart`);
-          }
+          createChart(metric, historicalData);
         });
 
         hideError();
       } catch (error) {
         console.error('Error updating charts:', error);
-        showError(`Failed to load historical data: ${error.message}`);
+        showError('Failed to load historical data. Please check your InfluxDB configuration.');
       }
     }
 
     async function updateDashboard() {
       try {
+        // Update current metrics
         const currentData = await getLatestCurrentData();
+        updateCurrentMetrics(currentData);
         
-        if (Object.keys(currentData).length === 0) {
-          updateCurrentMetrics({
-            temperature: null,
-            humidity: null,
-            soil_moisture: null,
-            rain_intensity: null,
-            wind_speed: null,
-            motion_detected: null
-          }, false);
-        } else {
-          updateCurrentMetrics(currentData, false);
-        }
-        
+        // Update charts
         await updateCharts();
       } catch (error) {
         console.error('Error updating dashboard:', error);
         showError('Failed to fetch data from InfluxDB. Please check your connection.');
-        updateCurrentMetrics({
-          temperature: null,
-          humidity: null,
-          soil_moisture: null,
-          rain_intensity: null,
-          wind_speed: null,
-          motion_detected: null
-        }, false);
+        updateCurrentMetrics(mockCurrentData);
       }
     }
 
     function showError(message) {
       document.getElementById('error-text').textContent = message;
       document.getElementById('error-message').classList.remove('hidden');
-      updateStatus('warning', 'Data Unavailable');
+      updateStatus('offline', 'System Offline');
     }
 
     function hideError() {
@@ -688,14 +611,16 @@
       updateStatus('online', 'System Online');
     }
 
+    // Event listeners
     document.getElementById('time-range').addEventListener('change', function(e) {
       currentTimeRange = e.target.value;
       
       if (currentTimeRange === 'custom') {
         document.getElementById('custom-range').classList.remove('hidden');
         
+        // Set default custom range to last 24 hours
         const now = new Date();
-        const yesterday = new Date(now.getTime() - 24 * 60 * 1000);
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         
         document.getElementById('end-date').value = now.toISOString().slice(0, 16);
         document.getElementById('start-date').value = yesterday.toISOString().slice(0, 16);
@@ -711,41 +636,25 @@
       if (startDate && endDate && new Date(startDate) < new Date(endDate)) {
         updateCharts();
       } else {
-        showError('Please select a valid date range (start date must be before end date).');
+        alert('Please select a valid date range (start date must be before end date).');
       }
     });
 
+    // Initialize dashboard
     updateDashboard();
     
+    // Update current data every 6 seconds
     setInterval(async () => {
       try {
         const currentData = await getLatestCurrentData();
-        
-        if (Object.keys(currentData).length === 0) {
-          updateCurrentMetrics({
-            temperature: null,
-            humidity: null,
-            soil_moisture: null,
-            rain_intensity: null,
-            wind_speed: null,
-            motion_detected: null
-          }, false);
-        } else {
-          updateCurrentMetrics(currentData, false);
-        }
+        updateCurrentMetrics(currentData);
       } catch (error) {
         console.error('Error updating current data:', error);
-        updateCurrentMetrics({
-          temperature: null,
-          humidity: null,
-          soil_moisture: null,
-          rain_intensity: null,
-          wind_speed: null,
-          motion_detected: null
-        }, false);
+        updateCurrentMetrics(mockCurrentData);
       }
     }, 6000);
 
+    // Update charts every 30 seconds
     let isUpdatingCharts = false;
     setInterval(async () => {
       if (!isUpdatingCharts) {
@@ -756,12 +665,7 @@
           isUpdatingCharts = false;
         }
       }
-    }, 60000);
-
-    // Update current time every second
-    setInterval(() => {
-      document.getElementById('current-time').textContent = `Now: ${new Date().toLocaleString()}`;
-    }, 1000);
+    }, 30000);
   </script>
 </body>
 </html>
