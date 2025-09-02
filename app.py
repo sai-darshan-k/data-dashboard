@@ -11,41 +11,35 @@ import logging
 from cachetools import TTLCache
 from datetime import datetime
 
-app = Flask(__name__, static_folder='static')  # Adjusted for root-level app.py
-CORS(app)  # Enable CORS to allow frontend requests
+app = Flask(__name__, static_folder='static')
+CORS(app)
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] - %(message)s',
     handlers=[
-        logging.StreamHandler()  # Output logs to terminal
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
 
-# InfluxDB and Groq API configuration
 INFLUXDB_URL = 'https://us-east-1-1.aws.cloud2.influxdata.com'
-INFLUXDB_TOKEN = os.getenv('INFLUXDB_TOKEN')  # Moved to env variable
+INFLUXDB_TOKEN = 'nZ49M1MTGbHtRCrc2OJhx-kVIBWuwvereT-o1mcq2COz3urUNuUuIIMjysObK8oOEHn8352w7LKFyrX8PQpdsA=='
 INFLUXDB_ORG = 'Agri'
 INFLUXDB_BUCKET = 'smart_agri'
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
-# Cache for recommendations (TTL of 300 seconds = 5 minutes)
 recommendation_cache = TTLCache(maxsize=100, ttl=300)
-
-# Request counter
 request_counter = 0
 
 def get_rain_status(value):
-    if not value or value == 'null' or isinstance(value, float) and value != value:  # Check for None, 'null', or NaN
+    if not value or value == 'null' or isinstance(value, float) and value != value:
         return 'Unknown'
     try:
-        value = int(float(value))  # Convert to float first to handle string numbers, then to int
+        value = int(float(value))
         if value < 1500:
             return 'Heavy Rain'
         elif value < 3000:
@@ -122,7 +116,6 @@ def get_grok_recommendations(data):
         logger.error("GROQ_API_KEY is not set")
         return {"pomegranate": "GROQ_API_KEY is not set", "guava": "GROQ_API_KEY is not set"}
 
-    # Check cache
     cache_key = json.dumps(data, sort_keys=True)
     if cache_key in recommendation_cache:
         logger.info(f"Cache hit for sensor data: {json.dumps(data, indent=2)}")
@@ -130,7 +123,6 @@ def get_grok_recommendations(data):
 
     logger.info(f"Cache miss, fetching new recommendations for sensor data: {json.dumps(data, indent=2)}")
 
-    # Prepare sensor data for the prompt
     temp = data.get('temperature', 'unknown')
     humidity = data.get('humidity', 'unknown')
     soil_moisture = data.get('soil_moisture', 'unknown')
@@ -157,7 +149,7 @@ def get_grok_recommendations(data):
             'Authorization': f'Bearer {GROQ_API_KEY}',
             'Content-Type': 'application/json'
         }, json={
-            'model': 'llama-3.3-70b-versatile',
+            'model': 'mixtral-8x7b-32768',  # Changed to a more reliable model
             'messages': [{'role': 'user', 'content': prompt}],
             'max_tokens': 500
         })
@@ -173,7 +165,6 @@ def get_grok_recommendations(data):
         recommendations = result['choices'][0]['message']['content']
         logger.info(f"Raw Groq API response: ```json\n{recommendations}\n```")
         
-        # Strip Markdown code block markers if present
         cleaned_response = re.sub(r'^```json\n|\n```$', '', recommendations).strip()
         logger.info(f"Cleaned Groq API response: {cleaned_response}")
         
@@ -235,7 +226,15 @@ def health_check():
     logger.info("Health check requested")
     return jsonify({"status": "healthy", "request_count": request_counter})
 
-application = app  # For Vercel WSGI compatibility
+@app.route('/api/get-influxdb-token', methods=['GET'])
+def get_influxdb_token():
+    logger.info("Fetching InfluxDB token")
+    if not INFLUXDB_TOKEN:
+        logger.error("INFLUXDB_TOKEN is not set")
+        return jsonify({"error": "INFLUXDB_TOKEN is not set"}), 500
+    return jsonify({"token": INFLUXDB_TOKEN})
+
+application = app
 
 if __name__ == '__main__':
     logger.info("Starting Flask application on port 5000")
