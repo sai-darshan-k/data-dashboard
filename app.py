@@ -11,20 +11,23 @@ import logging
 from cachetools import TTLCache
 from datetime import datetime
 
-app = Flask(__name__, static_folder='static')
-CORS(app)
+app = Flask(__name__, static_folder='../static')
+CORS(app)  # Enable CORS to allow frontend requests
 
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] - %(message)s',
     handlers=[
-        logging.StreamHandler()
+        logging.StreamHandler()  # Output logs to terminal
     ]
 )
 logger = logging.getLogger(__name__)
 
+# Load environment variables
 load_dotenv()
 
+# InfluxDB and Groq API configuration
 INFLUXDB_URL = 'https://us-east-1-1.aws.cloud2.influxdata.com'
 INFLUXDB_TOKEN = 'nZ49M1MTGbHtRCrc2OJhx-kVIBWuwvereT-o1mcq2COz3urUNuUuIIMjysObK8oOEHn8352w7LKFyrX8PQpdsA=='
 INFLUXDB_ORG = 'Agri'
@@ -32,14 +35,17 @@ INFLUXDB_BUCKET = 'smart_agri'
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
+# Cache for recommendations (TTL of 300 seconds = 5 minutes)
 recommendation_cache = TTLCache(maxsize=100, ttl=300)
+
+# Request counter
 request_counter = 0
 
 def get_rain_status(value):
-    if not value or value == 'null' or isinstance(value, float) and value != value:
+    if not value or value == 'null' or isinstance(value, float) and value != value:  # Check for None, 'null', or NaN
         return 'Unknown'
     try:
-        value = int(float(value))
+        value = int(float(value))  # Convert to float first to handle string numbers, then to int
         if value < 1500:
             return 'Heavy Rain'
         elif value < 3000:
@@ -50,10 +56,6 @@ def get_rain_status(value):
 
 def fetch_sensor_data(range='-10m'):
     logger.info(f"Fetching sensor data for range {range}")
-    if not INFLUXDB_TOKEN:
-        logger.error("INFLUXDB_TOKEN is not set")
-        return None
-
     query = f"""
         from(bucket: "{INFLUXDB_BUCKET}")
           |> range(start: {range})
@@ -75,7 +77,6 @@ def fetch_sensor_data(range='-10m'):
             return None
 
         text = response.text
-        logger.debug(f"InfluxDB raw response: {text}")
         lines = text.split('\n')
         lines = [line for line in lines if line and not line.startswith('#')]
         if len(lines) < 2:
@@ -112,10 +113,7 @@ def get_grok_recommendations(data):
         logger.warning("No sensor data provided for recommendations")
         return {"pomegranate": "No data available to provide recommendations.", "guava": "No data available to provide recommendations."}
 
-    if not GROQ_API_KEY:
-        logger.error("GROQ_API_KEY is not set")
-        return {"pomegranate": "GROQ_API_KEY is not set", "guava": "GROQ_API_KEY is not set"}
-
+    # Check cache
     cache_key = json.dumps(data, sort_keys=True)
     if cache_key in recommendation_cache:
         logger.info(f"Cache hit for sensor data: {json.dumps(data, indent=2)}")
@@ -123,6 +121,7 @@ def get_grok_recommendations(data):
 
     logger.info(f"Cache miss, fetching new recommendations for sensor data: {json.dumps(data, indent=2)}")
 
+    # Prepare sensor data for the prompt
     temp = data.get('temperature', 'unknown')
     humidity = data.get('humidity', 'unknown')
     soil_moisture = data.get('soil_moisture', 'unknown')
@@ -149,7 +148,7 @@ def get_grok_recommendations(data):
             'Authorization': f'Bearer {GROQ_API_KEY}',
             'Content-Type': 'application/json'
         }, json={
-            'model': 'mixtral-8x7b-32768',  # Changed to a more reliable model
+            'model': 'llama-3.3-70b-versatile',
             'messages': [{'role': 'user', 'content': prompt}],
             'max_tokens': 500
         })
@@ -165,6 +164,7 @@ def get_grok_recommendations(data):
         recommendations = result['choices'][0]['message']['content']
         logger.info(f"Raw Groq API response: ```json\n{recommendations}\n```")
         
+        # Strip Markdown code block markers if present
         cleaned_response = re.sub(r'^```json\n|\n```$', '', recommendations).strip()
         logger.info(f"Cleaned Groq API response: {cleaned_response}")
         
@@ -188,7 +188,7 @@ def get_grok_recommendations(data):
 @app.route('/')
 def serve_index():
     logger.info("Serving index.html")
-    return send_from_directory('static', 'index.html')
+    return send_from_directory('../static', 'index.html')
 
 @app.route('/api/recommendations', methods=['GET'])
 def get_recommendations():
@@ -196,45 +196,26 @@ def get_recommendations():
     request_counter += 1
     logger.info(f"Handling /api/recommendations request #{request_counter} at {datetime.now().isoformat()}")
     
-    try:
-        ranges = ['-10m', '-1d', '-7d']
-        latest_data = None
-        range_used = None
+    ranges = ['-10m', '-1d', '-7d']
+    latest_data = None
+    range_used = None
 
-        for range_time in ranges:
-            logger.info(f"Attempting to fetch data for range {range_time}")
-            latest_data = fetch_sensor_data(range_time)
-            if latest_data:
-                range_used = range_time
-                logger.info(f"Data found for range {range_time}")
-                break
-            logger.warning(f"No data found for range {range_time}")
-        
-        recommendations = get_grok_recommendations(latest_data)
-        response = {
-            'data': latest_data if latest_data else {},
-            'recommendations': recommendations
-        }
-        logger.info(f"Response for request #{request_counter}: data={json.dumps(latest_data, indent=2) if latest_data else {}}, recommendations={json.dumps(recommendations, indent=2)}")
-        return jsonify(response)
-    except Exception as e:
-        logger.error(f"Error in /api/recommendations: {str(e)}")
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
-
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    logger.info("Health check requested")
-    return jsonify({"status": "healthy", "request_count": request_counter})
-
-@app.route('/api/get-influxdb-token', methods=['GET'])
-def get_influxdb_token():
-    logger.info("Fetching InfluxDB token")
-    if not INFLUXDB_TOKEN:
-        logger.error("INFLUXDB_TOKEN is not set")
-        return jsonify({"error": "INFLUXDB_TOKEN is not set"}), 500
-    return jsonify({"token": INFLUXDB_TOKEN})
-
-application = app
+    for range_time in ranges:
+        logger.info(f"Attempting to fetch data for range {range_time}")
+        latest_data = fetch_sensor_data(range_time)
+        if latest_data:
+            range_used = range_time
+            logger.info(f"Data found for range {range_time}")
+            break
+        logger.warning(f"No data found for range {range_time}")
+    
+    recommendations = get_grok_recommendations(latest_data)
+    response = {
+        'data': latest_data if latest_data else {},
+        'recommendations': recommendations
+    }
+    logger.info(f"Response for request #{request_counter}: data={json.dumps(latest_data, indent=2) if latest_data else {}}, recommendations={json.dumps(recommendations, indent=2)}")
+    return jsonify(response)
 
 if __name__ == '__main__':
     logger.info("Starting Flask application on port 5000")
