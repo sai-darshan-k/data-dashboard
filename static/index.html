@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Pilot-Christ Farm</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -11,7 +14,7 @@
   <style>
     .gradient-bg {
       background: linear-gradient(135deg, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.5) 100%), 
-                  url('./static/farm.jpg') no-repeat center center fixed;
+                  url('/static/farm.jpg') no-repeat center center fixed;
       background-size: cover;
     }
     
@@ -68,7 +71,6 @@
       height: 300px;
     }
 
-    /* Responsive chart container adjustments */
     @media (max-width: 640px) {
       .chart-container {
         height: 200px;
@@ -112,7 +114,6 @@
       }
     }
 
-    /* Analog Meter Styles */
     .analog-meter {
       width: 200px;
       height: 200px;
@@ -155,7 +156,6 @@
       margin-top: 4px;
     }
 
-    /* Soil Moisture Wave Animation */
     .soil-wave {
       background: linear-gradient(45deg, #10b981, #059669);
       border-radius: 50%;
@@ -179,7 +179,6 @@
       100% { left: 100%; }
     }
 
-    /* Wind Speed Compass */
     .wind-compass {
       width: 180px;
       height: 180px;
@@ -274,7 +273,6 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    /* Motion Detection Animation */
     .motion-detector {
       width: 120px;
       height: 120px;
@@ -300,7 +298,6 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Rain Intensity Visual */
     .rain-indicator {
       width: 140px;
       height: 180px;
@@ -357,13 +354,11 @@
   </style>
 </head>
 <body class="gradient-bg min-h-screen p-4 sm:p-6">
-  <!-- Header -->
   <div class="text-center mb-8">
     <h1 class="text-4xl sm:text-5xl font-bold text-white mb-2 title-glow floating-animation">🌾 Christ Farm - Pilot</h1>
     <p class="text-white/90 text-base sm:text-lg">Advanced IoT Monitoring & Analytics Dashboard</p>
   </div>
 
-  <!-- Status Bar -->
   <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8 max-w-7xl mx-auto">
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center">
@@ -376,17 +371,27 @@
     </div>
   </div>
 
-  <!-- Current Conditions Analysis -->
   <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8 max-w-7xl mx-auto">
-    <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">📊 Current Conditions Analysis</h2>
-    <p id="current-analysis" class="text-gray-700 text-sm sm:text-base">Loading analysis...</p>
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800">🌱 Crop Recommendations</h2>
+      <button id="generate-recommendation" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
+        Generate New Recommendation
+      </button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Pomegranate</h3>
+        <p id="pomegranate-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
+      </div>
+      <div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Guava</h3>
+        <p id="guava-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
+      </div>
+    </div>
   </div>
 
-  <!-- Current Metrics Grid -->
   <div class="max-w-7xl mx-auto mb-8">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-      
-      <!-- Temperature Analog Meter -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌡️ Temperature</h3>
@@ -411,7 +416,6 @@
         </div>
       </div>
 
-      <!-- Humidity Analog Meter -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">💧 Humidity</h3>
@@ -436,7 +440,6 @@
         </div>
       </div>
 
-      <!-- Rain Status Visual -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌧️ Rainfall</h3>
@@ -451,7 +454,6 @@
         </div>
       </div>
 
-      <!-- Soil Moisture Wave -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌱 Soil Moisture</h3>
@@ -465,7 +467,6 @@
         </div>
       </div>
 
-      <!-- Wind Speed Compass -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🌬️ Wind Speed</h3>
@@ -482,7 +483,6 @@
         </div>
       </div>
 
-      <!-- Motion Detection Radar -->
       <div class="metric-card rounded-2xl p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-4">
           <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">🚶 Motion Detection</h3>
@@ -497,7 +497,6 @@
     </div>
   </div>
 
-  <!-- Time Range Selector -->
   <div class="max-w-7xl mx-auto mb-8">
     <div class="glass-effect rounded-2xl p-4 sm:p-6">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -514,7 +513,6 @@
         </div>
       </div>
       
-      <!-- Custom Date Range -->
       <div id="custom-range" class="mt-6 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
@@ -533,10 +531,8 @@
     </div>
   </div>
 
-  <!-- Charts Grid -->
   <div class="max-w-7xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-      <!-- Temperature Chart -->
       <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-blue-500 to-red-500 w-4 h-4 rounded-full mr-3"></span>
@@ -547,7 +543,6 @@
         </div>
       </div>
 
-      <!-- Humidity Chart -->
       <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-cyan-500 to-blue-600 w-4 h-4 rounded-full mr-3"></span>
@@ -558,7 +553,6 @@
         </div>
       </div>
 
-      <!-- Soil Moisture Chart -->
       <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-green-500 to-emerald-600 w-4 h-4 rounded-full mr-3"></span>
@@ -569,7 +563,6 @@
         </div>
       </div>
 
-      <!-- Wind Speed Chart -->
       <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-purple-500 to-violet-600 w-4 h-4 rounded-full mr-3"></span>
@@ -580,7 +573,6 @@
         </div>
       </div>
 
-      <!-- Rainfall Chart -->
       <div class="glass-effect rounded-2xl p-4 sm:p-8 shadow-xl lg:col-span-2">
         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="bg-gradient-to-r from-indigo-500 to-blue-600 w-4 h-4 rounded-full mr-3"></span>
@@ -593,7 +585,6 @@
     </div>
   </div>
 
-  <!-- Error Message -->
   <div id="error-message" class="max-w-7xl mx-auto mt-8 hidden">
     <div class="bg-red-50 border-2 border-red-200 text-red-800 px-4 sm:px-6 py-4 rounded-2xl shadow-lg">
       <div class="flex items-center">
@@ -610,11 +601,19 @@
     const INFLUXDB_TOKEN = 'nZ49M1MTGbHtRCrc2OJhx-kVIBWuwvereT-o1mcq2COz3urUNuUuIIMjysObK8oOEHn8352w7LKFyrX8PQpdsA==';
     const INFLUXDB_ORG = 'Agri';
     const INFLUXDB_BUCKET = 'smart_agri';
+    const FLASK_API_URL = '/api/recommendations';
+    const DATA_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const RECOMMENDATION_COOLDOWN = 5 * 1000; // 5 seconds cooldown
 
     let charts = {};
     let currentTimeRange = '1d';
+    let lastDataTime = null;
+    let lastData = null;
+    let isInitialized = false;
+    let isFetchingRecommendations = false;
+    let lastRecommendationFetch = 0;
+    let recommendationTimeout = null;
 
-    // Chart configurations
     const chartConfigs = {
       temperature: {
         canvas: 'temperatureChart',
@@ -656,29 +655,24 @@
 
     function initializeWindCompass() {
       const compassInner = document.getElementById('wind-compass-inner');
-      const radius = 80; // Half of 160px (inner compass width/height)
+      const radius = 80;
       const labels = ['0', '5', '10', '15', '20', '25', '30'];
-      
-      // Semicircle from 5:55 o'clock (177.5°) to 11:55 o'clock (357.5°), spanning 180° clockwise
-      const startAngle = 177.5; // 5:55 o'clock
-      const endAngle = 357.5;   // 11:55 o'clock
-      const angleStep = 30;     // 180° / 6 intervals = 30° per step
+      const startAngle = 177.5;
+      const endAngle = 357.5;
+      const angleStep = 30;
       const labelAngles = Array.from({ length: 7 }, (_, index) => startAngle + index * angleStep);
 
-      // Add points and speed labels
       labelAngles.forEach((angle, index) => {
         const rad = (angle * Math.PI) / 180;
         const x = radius + radius * 0.85 * Math.cos(rad);
         const y = radius + radius * 0.85 * Math.sin(rad);
 
-        // Add point
         const point = document.createElement('div');
         point.className = 'wind-compass-point';
         point.style.left = `${x}px`;
         point.style.top = `${y}px`;
         compassInner.appendChild(point);
 
-        // Add label
         const number = document.createElement('div');
         number.className = 'wind-compass-number';
         number.textContent = labels[index];
@@ -690,30 +684,28 @@
       });
     }
 
-    // Analog meter update functions
     function updateAnalogMeter(meterId, value, maxValue, minValue = 0) {
       const meter = document.getElementById(meterId);
       if (!meter) return;
       
       const percentage = Math.max(0, Math.min(100, ((value - minValue) / (maxValue - minValue)) * 100));
-      const circumference = 2 * Math.PI * 80; // radius = 80
+      const circumference = 2 * Math.PI * 80;
       const dashArray = (percentage / 100) * circumference;
       
       meter.style.strokeDasharray = `${dashArray} ${circumference}`;
     }
 
+    function updateWindNeedle(speed) {
+      const needle = document.getElementById('wind-needle');
+      if (!needle) return;
+      
+      const maxSpeed = 30;
+      const minAngle = 267.5;
+      const maxAngle = 447.5;
+      const rotation = Math.min(minAngle + (speed / maxSpeed) * (maxAngle - minAngle), maxAngle);
+      needle.style.transform = `rotate(${rotation}deg)`;
+    }
 
-function updateWindNeedle(speed) {
-  const needle = document.getElementById('wind-needle');
-  if (!needle) return;
-  
-  // Map wind speed to rotation (0-20 m/s -> 177.5° to 357.5°)
-  const maxSpeed = 30;
-  const minAngle = 267.5; // Start at 5:55 o'clock
-  const maxAngle = 447.5; // End at 11:55 o'clock
-  const rotation = Math.min(minAngle + (speed / maxSpeed) * (maxAngle - minAngle), maxAngle);
-  needle.style.transform = `rotate(${rotation}deg)`;
-}
     function updateRainIndicator(intensity) {
       const rainLevel = document.getElementById('rain-level');
       const rainDropsContainer = document.getElementById('rain-drops');
@@ -757,11 +749,11 @@ function updateWindNeedle(speed) {
       
       const value = parseInt(moisture);
       if (value > 70) {
-        indicator.style.borderColor = '#10b981'; // High moisture - green
+        indicator.style.borderColor = '#10b981';
       } else if (value > 30) {
-        indicator.style.borderColor = '#f59e0b'; // Medium moisture - yellow
+        indicator.style.borderColor = '#f59e0b';
       } else {
-        indicator.style.borderColor = '#ef4444'; // Low moisture - red
+        indicator.style.borderColor = '#ef4444';
       }
     }
 
@@ -770,12 +762,12 @@ function updateWindNeedle(speed) {
       switch(currentTimeRange) {
         case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000);
         case '3d': return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 1000);
+        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 1000);
         case 'custom':
           const startDate = document.getElementById('start-date').value;
           return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 1000);
-        default: return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        default: return new Date(now.getTime() - 24 * 60 * 1000);
       }
     }
 
@@ -878,7 +870,6 @@ function updateWindNeedle(speed) {
         }
 
         const text = await response.text();
-        console.log('Raw InfluxDB Response:', text);
         const lines = text.split('\n').filter(line => line.length > 0 && !line.startsWith('#'));
         
         if (lines.length < 2) {
@@ -912,114 +903,115 @@ function updateWindNeedle(speed) {
       }
     }
 
+    async function fetchRecommendations(source = 'unknown') {
+      const now = Date.now();
+      if (isFetchingRecommendations) {
+        console.log(`Blocked fetchRecommendations (already in progress) at ${new Date().toLocaleString()} from ${source}`);
+        return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, data: {} };
+      }
+      if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
+        console.log(`Blocked fetchRecommendations (within cooldown) at ${new Date().toLocaleString()} from ${source}`);
+        return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, data: {} };
+      }
+
+      isFetchingRecommendations = true;
+      lastRecommendationFetch = now;
+      console.log(`Fetching recommendations at ${new Date().toLocaleString()} from ${source}`);
+      
+      try {
+        const response = await fetch(FLASK_API_URL, {
+          cache: 'no-store'
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(`Fetched recommendations from ${source}:`, data.recommendations);
+        return data;
+      } catch (error) {
+        console.error(`Error fetching recommendations from ${source}:`, error);
+        showError('Failed to fetch recommendations. Please check the server connection.');
+        return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, data: {} };
+      } finally {
+        isFetchingRecommendations = false;
+      }
+    }
+
     async function getLatestCurrentData() {
       let latestData = await fetchSensorData('-10m');
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
+      let dataTime = latestData && latestData._time ? new Date(latestData._time) : null;
+      let rangeUsed = '-10m';
+
+      if (!latestData || Object.keys(latestData).length === 0 || !dataTime) {
         console.warn('No data in last 10 minutes, trying last 1 day');
         latestData = await fetchSensorData('-1d');
+        dataTime = latestData && latestData._time ? new Date(latestData._time) : null;
+        rangeUsed = '-1d';
       }
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
+      if (!latestData || Object.keys(latestData).length === 0 || !dataTime) {
         console.warn('No data in last 1 day, trying last 7 days');
         latestData = await fetchSensorData('-7d');
+        dataTime = latestData && latestData._time ? new Date(latestData._time) : null;
+        rangeUsed = '-7d';
       }
-      if (!latestData || Object.keys(latestData).length === 0 || !latestData._time) {
+      if (!latestData || Object.keys(latestData).length === 0 || !dataTime) {
         console.warn('No recent data found');
         updateStatus('offline', 'System Offline - No Recent Data');
         showError('No current data available within the last 7 days.');
-        return {};
+        return { data: {}, range: null };
       }
 
-      const dataTime = new Date(latestData._time);
       const now = new Date();
-      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-      if (dataTime >= tenMinutesAgo) {
+      const fiveMinutesAgo = new Date(now.getTime() - DATA_TIMEOUT);
+      lastDataTime = dataTime;
+      lastData = latestData;
+
+      if (dataTime >= fiveMinutesAgo) {
         updateStatus('online', 'System Online');
       } else {
         updateStatus('offline', `System Offline - Last Data: ${dataTime.toLocaleString()}`);
       }
-      return latestData;
+      return { data: latestData, range: rangeUsed };
     }
 
     function updateCurrentMetrics(latestData, isMock = false) {
-      // Update temperature analog meter
       const temp = latestData.temperature ? parseFloat(latestData.temperature) : 0;
       document.getElementById('temperature').textContent = 
         latestData.temperature ? `${temp.toFixed(1)} °C` : '-- °C';
-      updateAnalogMeter('temp-meter', temp, 50, -10); // Range: -10°C to 50°C
+      updateAnalogMeter('temp-meter', temp, 50, -10);
 
-      // Update humidity analog meter
       const humidity = latestData.humidity ? parseFloat(latestData.humidity) : 0;
       document.getElementById('humidity').textContent = 
         latestData.humidity ? `${humidity.toFixed(1)} %` : '-- %';
-      updateAnalogMeter('humidity-meter', humidity, 100, 0); // Range: 0% to 100%
+      updateAnalogMeter('humidity-meter', humidity, 100, 0);
 
-      // Update rain indicator
       const rainStatus = latestData.rain_intensity ? getRainStatus(parseInt(latestData.rain_intensity)) : '--';
       document.getElementById('rain_intensity').textContent = rainStatus;
       updateRainIndicator(rainStatus);
 
-      // Update soil moisture with visual indicator
       const soilMoisture = latestData.soil_moisture ? parseInt(latestData.soil_moisture) : 0;
       document.getElementById('soil_moisture').textContent = 
         latestData.soil_moisture ? `${soilMoisture} %` : '-- %';
       updateSoilMoistureVisual(latestData.soil_moisture);
 
-      // Update wind speed with needle
       const windSpeed = latestData.wind_speed ? parseFloat(latestData.wind_speed) : 0;
       document.getElementById('wind_speed').textContent = 
         latestData.wind_speed ? `${windSpeed.toFixed(2)} m/s` : '-- m/s';
       updateWindNeedle(windSpeed);
 
-      // Update motion detection radar
       const motionStatus = latestData.motion_detected ? (latestData.motion_detected === '1' ? 'DETECTED' : 'NOT DETECTED') : '--';
       document.getElementById('motion_detected').textContent = motionStatus;
       updateMotionRadar(motionStatus);
       
       document.getElementById('current-time').textContent = 
         `Now: ${new Date().toLocaleString()}`;
-
-      // Update analysis
-      updateAnalysis(latestData);
     }
 
-    function updateAnalysis(latestData) {
-      let analysis = "Current conditions: ";
-      if (latestData.temperature) {
-        const temp = parseFloat(latestData.temperature);
-        analysis += `Temp ${temp.toFixed(1)}°C (${temp > 30 ? 'hot - consider irrigation' : temp < 15 ? 'cool - monitor for frost' : 'moderate'}), `;
-      } else {
-        analysis += "Temp unavailable, ";
-      }
-      if (latestData.humidity) {
-        const hum = parseFloat(latestData.humidity);
-        analysis += `Humidity ${hum.toFixed(1)}% (${hum > 80 ? 'high - risk of fungal growth' : hum < 40 ? 'low - may need watering' : 'optimal'}), `;
-      } else {
-        analysis += "Humidity unavailable, ";
-      }
-      if (latestData.soil_moisture) {
-        const soil = parseInt(latestData.soil_moisture);
-        analysis += `Soil moisture ${soil}% (${soil > 70 ? 'high' : soil < 30 ? 'low - irrigate soon' : 'good'}), `;
-      } else {
-        analysis += "Soil moisture unavailable, ";
-      }
-      if (latestData.rain_intensity) {
-        analysis += `Rain: ${getRainStatus(parseInt(latestData.rain_intensity))}, `;
-      } else {
-        analysis += "Rain unavailable, ";
-      }
-      if (latestData.wind_speed) {
-        const wind = parseFloat(latestData.wind_speed);
-        analysis += `Wind ${wind.toFixed(1)} m/s (${wind > 10 ? 'strong - secure structures' : 'calm'}), `;
-      } else {
-        analysis += "Wind unavailable, ";
-      }
-      if (latestData.motion_detected) {
-        analysis += `Motion: ${latestData.motion_detected === '1' ? 'detected - check for intruders' : 'none'}.`;
-      } else {
-        analysis += "Motion unavailable.";
-      }
-
-      document.getElementById('current-analysis').textContent = analysis.trim();
+    function updateRecommendations(recommendations) {
+      document.getElementById('pomegranate-recommendation').textContent = 
+        recommendations.pomegranate || 'No recommendations available.';
+      document.getElementById('guava-recommendation').textContent = 
+        recommendations.guava || 'No recommendations available.';
     }
 
     function getRainStatus(value) {
@@ -1059,12 +1051,10 @@ function updateWindNeedle(speed) {
 
       const ctx = canvas.getContext('2d');
       
-      // Ensure previous chart is destroyed
       if (charts[metric]) {
         try {
           charts[metric].destroy();
           delete charts[metric];
-          console.log(`Destroyed existing chart for ${metric}`);
         } catch (error) {
           console.error(`Error destroying chart for ${metric}:`, error);
         }
@@ -1175,7 +1165,6 @@ function updateWindNeedle(speed) {
             }
           }
         });
-        console.log(`Created new chart for ${metric}`);
       } catch (error) {
         console.error(`Failed to create chart for ${metric}:`, error);
         showError(`Failed to render chart for ${metric}. Please refresh the page.`);
@@ -1186,13 +1175,11 @@ function updateWindNeedle(speed) {
       try {
         const historicalData = await fetchHistoricalData();
         
-        // Destroy all existing charts
         Object.keys(charts).forEach(metric => {
           if (charts[metric]) {
             try {
               charts[metric].destroy();
               delete charts[metric];
-              console.log(`Destroyed chart for ${metric} in updateCharts`);
             } catch (error) {
               console.error(`Error destroying chart for ${metric} in updateCharts:`, error);
             }
@@ -1222,10 +1209,18 @@ function updateWindNeedle(speed) {
     }
 
     async function updateDashboard() {
+      if (isInitialized) {
+        console.log('Dashboard already initialized, skipping...');
+        return;
+      }
+      isInitialized = true;
+      console.log('Initializing dashboard at:', new Date().toLocaleString());
+
       try {
-        const currentData = await getLatestCurrentData();
-        
-        if (Object.keys(currentData).length === 0) {
+        const { data, range } = await getLatestCurrentData();
+        let recommendations;
+
+        if (Object.keys(data).length === 0) {
           updateCurrentMetrics({
             temperature: null,
             humidity: null,
@@ -1234,14 +1229,18 @@ function updateWindNeedle(speed) {
             wind_speed: null,
             motion_detected: null
           }, false);
+          recommendations = { pomegranate: 'No data available.', guava: 'No data available.' };
         } else {
-          updateCurrentMetrics(currentData, false);
+          const response = await fetchRecommendations('initial-load');
+          recommendations = response.recommendations;
+          updateCurrentMetrics(data, false);
         }
         
+        updateRecommendations(recommendations);
         await updateCharts();
       } catch (error) {
         console.error('Error updating dashboard:', error);
-        showError('Failed to fetch data from InfluxDB. Please check your connection.');
+        showError('Failed to fetch data or recommendations. Please check your connection.');
         updateCurrentMetrics({
           temperature: null,
           humidity: null,
@@ -1250,6 +1249,54 @@ function updateWindNeedle(speed) {
           wind_speed: null,
           motion_detected: null
         }, false);
+        updateRecommendations({ pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' });
+      }
+    }
+
+    async function updateSensorData() {
+      try {
+        const { data, range } = await getLatestCurrentData();
+        
+        if (Object.keys(data).length === 0) {
+          if (lastData) {
+            updateCurrentMetrics(lastData, false);
+          } else {
+            updateCurrentMetrics({
+              temperature: null,
+              humidity: null,
+              soil_moisture: null,
+              rain_intensity: null,
+              wind_speed: null,
+              motion_detected: null
+            }, false);
+          }
+        } else {
+          lastData = data;
+          updateCurrentMetrics(data, false);
+        }
+
+        const now = new Date();
+        if (lastDataTime && now - lastDataTime >= DATA_TIMEOUT) {
+          updateStatus('offline', `System Offline - Last Data: ${lastDataTime.toLocaleString()}`);
+          if (lastData) {
+            updateCurrentMetrics(lastData, false);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating sensor data:', error);
+        if (lastData && lastDataTime && new Date() - lastDataTime >= DATA_TIMEOUT) {
+          updateStatus('offline', `System Offline - Last Data: ${lastDataTime.toLocaleString()}`);
+          updateCurrentMetrics(lastData, false);
+        } else {
+          updateCurrentMetrics({
+            temperature: null,
+            humidity: null,
+            soil_moisture: null,
+            rain_intensity: null,
+            wind_speed: null,
+            motion_detected: null
+          }, false);
+        }
       }
     }
 
@@ -1261,74 +1308,96 @@ function updateWindNeedle(speed) {
 
     function hideError() {
       document.getElementById('error-message').classList.add('hidden');
-      updateStatus('online', 'System Online');
+      if (lastDataTime && new Date() - lastDataTime < DATA_TIMEOUT) {
+        updateStatus('online', 'System Online');
+      }
     }
 
-    // Event Listeners
-    document.getElementById('time-range').addEventListener('change', function(e) {
-      currentTimeRange = e.target.value;
-      
-      if (currentTimeRange === 'custom') {
-        document.getElementById('custom-range').classList.remove('hidden');
-        
-        const now = new Date();
-        const yesterday = new Date(now.getTime() - 24 * 60 * 1000);
-        
-        document.getElementById('end-date').value = now.toISOString().slice(0, 16);
-        document.getElementById('start-date').value = yesterday.toISOString().slice(0, 16);
-      } else {
-        document.getElementById('custom-range').classList.add('hidden');
-        updateCharts();
-      }
-    });
-
-    document.getElementById('apply-custom').addEventListener('click', function() {
-      const startDate = document.getElementById('start-date').value;
-      const endDate = document.getElementById('end-date').value;
-      if (startDate && endDate && new Date(startDate) < new Date(endDate)) {
-        updateCharts();
-      } else {
-        showError('Please select a valid date range (start date must be before end date).');
-      }
-    });
-
-    // Initialize wind compass and dashboard
-    initializeWindCompass();
-    updateDashboard();
-    
-    // Update current metrics every 6 seconds
-    setInterval(async () => {
-      try {
-        const currentData = await getLatestCurrentData();
-        
-        if (Object.keys(currentData).length === 0) {
-          updateCurrentMetrics({
-            temperature: null,
-            humidity: null,
-            soil_moisture: null,
-            rain_intensity: null,
-            wind_speed: null,
-            motion_detected: null
-          }, false);
-        } else {
-          updateCurrentMetrics(currentData, false);
+    function debounce(func, wait) {
+      return function executedFunction(...args) {
+        if (recommendationTimeout) {
+          clearTimeout(recommendationTimeout);
         }
-      } catch (error) {
-        console.error('Error updating current data:', error);
-        updateCurrentMetrics({
-          temperature: null,
-          humidity: null,
-          soil_moisture: null,
-          rain_intensity: null,
-          wind_speed: null,
-          motion_detected: null
-        }, false);
-      }
+        recommendationTimeout = setTimeout(() => {
+          func(...args);
+        }, wait);
+      };
+    }
+
+    function initializeEventListeners() {
+      const timeRangeSelect = document.getElementById('time-range');
+      const applyCustomButton = document.getElementById('apply-custom');
+      const generateRecommendationButton = document.getElementById('generate-recommendation');
+
+      timeRangeSelect.replaceWith(timeRangeSelect.cloneNode(true));
+      applyCustomButton.replaceWith(applyCustomButton.cloneNode(true));
+      generateRecommendationButton.replaceWith(generateRecommendationButton.cloneNode(true));
+
+      const newTimeRangeSelect = document.getElementById('time-range');
+      const newApplyCustomButton = document.getElementById('apply-custom');
+      const newGenerateRecommendationButton = document.getElementById('generate-recommendation');
+
+      newTimeRangeSelect.addEventListener('change', function(e) {
+        currentTimeRange = e.target.value;
+        
+        if (currentTimeRange === 'custom') {
+          document.getElementById('custom-range').classList.remove('hidden');
+          
+          const now = new Date();
+          const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          
+          document.getElementById('end-date').value = now.toISOString().slice(0, 16);
+          document.getElementById('start-date').value = yesterday.toISOString().slice(0, 16);
+        } else {
+          document.getElementById('custom-range').classList.add('hidden');
+          updateCharts();
+        }
+      });
+
+      newApplyCustomButton.addEventListener('click', function() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        if (startDate && endDate && new Date(startDate) < new Date(endDate)) {
+          updateCharts();
+        } else {
+          showError('Please select a valid date range (start date must be before end date).');
+        }
+      });
+
+      newGenerateRecommendationButton.addEventListener('click', debounce(async function() {
+        console.log('Generate New Recommendation button clicked at:', new Date().toLocaleString());
+        try {
+          const response = await fetchRecommendations('button-click');
+          updateRecommendations(response.recommendations);
+          hideError();
+        } catch (error) {
+          console.error('Error generating new recommendation:', error);
+          showError('Failed to generate new recommendations. Please try again.');
+          updateRecommendations({ pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' });
+        }
+      }, 1000));
+    }
+
+    initializeWindCompass();
+    if (!isInitialized) {
+      updateDashboard();
+      initializeEventListeners();
+    }
+
+    let sensorInterval = null;
+    let chartInterval = null;
+    let timeInterval = null;
+
+    if (sensorInterval) clearInterval(sensorInterval);
+    if (chartInterval) clearInterval(chartInterval);
+    if (timeInterval) clearInterval(timeInterval);
+
+    sensorInterval = setInterval(async () => {
+      await updateSensorData();
     }, 6000);
 
-    // Update charts every minute
     let isUpdatingCharts = false;
-    setInterval(async () => {
+    chartInterval = setInterval(async () => {
       if (!isUpdatingCharts) {
         isUpdatingCharts = true;
         try {
@@ -1339,8 +1408,7 @@ function updateWindNeedle(speed) {
       }
     }, 60000);
 
-    // Update current time every second
-    setInterval(() => {
+    timeInterval = setInterval(() => {
       document.getElementById('current-time').textContent = `Now: ${new Date().toLocaleString()}`;
     }, 1000);
   </script>
