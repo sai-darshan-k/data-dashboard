@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import requests
 import json
@@ -165,58 +165,93 @@ def get_grok_recommendations(data):
         logger.info(f"Raw Groq API response: ```json\n{recommendations}\n```")
         
         # Strip Markdown code block markers if present
-        cleaned_response = re.sub(r'^```json\n|\n```$', '', recommendations).strip()
-        logger.info(f"Cleaned Groq API response: {cleaned_response}")
+        cleaned_response = re.sub(r'^```json\n|\n```$', '', recommendations.strip())
         
         try:
             parsed_recommendations = json.loads(cleaned_response)
             if not isinstance(parsed_recommendations, dict) or 'pomegranate' not in parsed_recommendations or 'guava' not in parsed_recommendations:
-                raise ValueError("Invalid recommendation format: missing pomegranate or guava keys")
+                raise ValueError("Invalid JSON structure: missing 'pomegranate' or 'guava' keys")
             recommendation_cache[cache_key] = parsed_recommendations
-            logger.info(f"Cached recommendations for sensor data: {json.dumps(parsed_recommendations, indent=2)}")
+            logger.info("Successfully parsed and cached recommendations")
             return parsed_recommendations
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse Groq response as JSON: {str(e)}")
+            logger.error(f"Failed to parse Groq API response as JSON: {str(e)}")
             return {"pomegranate": f"Error parsing recommendations: {str(e)}", "guava": f"Error parsing recommendations: {str(e)}"}
         except ValueError as e:
-            logger.error(f"Invalid recommendation format: {str(e)}")
-            return {"pomegranate": f"Error in recommendation format: {str(e)}", "guava": f"Error in recommendation format: {str(e)}"}
+            logger.error(f"Invalid response structure: {str(e)}")
+            return {"pomegranate": f"Invalid response: {str(e)}", "guava": f"Invalid response: {str(e)}"}
     except Exception as e:
-        logger.error(f"Error fetching Groq recommendations: {str(e)}")
-        return {"pomegranate": f"Error fetching recommendations: {str(e)}", "guava": f"Error fetching recommendations: {str(e)}"}
+        logger.error(f"Error fetching recommendations from Groq API: {str(e)}")
+        return {"pomegranate": f"Failed to fetch recommendations: {str(e)}", "guava": f"Failed to fetch recommendations: {str(e)}"}
 
 @app.route('/')
 def serve_index():
-    logger.info("Serving index.html")
-    return send_from_directory('../static', 'index.html')
+    global request_counter
+    request_counter += 1
+    logger.info(f"Serving index.html - Request #{request_counter} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/api/recommendations', methods=['GET'])
+@app.route('/api/recommendations')
 def get_recommendations():
     global request_counter
     request_counter += 1
-    logger.info(f"Handling /api/recommendations request #{request_counter} at {datetime.now().isoformat()}")
-    
-    ranges = ['-10m', '-1d', '-7d']
-    latest_data = None
-    range_used = None
+    logger.info(f"Handling /api/recommendations request #{request_counter} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    for range_time in ranges:
-        logger.info(f"Attempting to fetch data for range {range_time}")
-        latest_data = fetch_sensor_data(range_time)
-        if latest_data:
-            range_used = range_time
-            logger.info(f"Data found for range {range_time}")
-            break
-        logger.warning(f"No data found for range {range_time}")
-    
-    recommendations = get_grok_recommendations(latest_data)
-    response = {
-        'data': latest_data if latest_data else {},
-        'recommendations': recommendations
-    }
-    logger.info(f"Response for request #{request_counter}: data={json.dumps(latest_data, indent=2) if latest_data else {}}, recommendations={json.dumps(recommendations, indent=2)}")
-    return jsonify(response)
+    # Try fetching data from progressively larger time ranges
+    data = fetch_sensor_data('-10m')
+    if not data:
+        logger.warning("No data in last 10 minutes, trying last 1 day")
+        data = fetch_sensor_data('-1d')
+    if not data:
+        logger.warning("No data in last 1 day, trying last 7 days")
+        data = fetch_sensor_data('-7d')
+
+    recommendations = get_grok_recommendations(data)
+    return jsonify({
+        'recommendations': recommendations,
+        'data': data or {}
+    })
+
+@app.route('/api/ask', methods=['POST'])
+def ask_crop_question():
+    global request_counter
+    request_counter += 1
+    logger.info(f"Handling /api/ask request #{request_counter} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    try:
+        request_data = request.get_json()
+        if not request_data or 'prompt' not in request_data:
+            logger.error("Invalid request: Missing 'prompt' in request body")
+            return jsonify({'error': 'Missing prompt in request body'}), 400
+
+        prompt = request_data['prompt']
+        logger.debug(f"Received prompt: {prompt}")
+
+        response = requests.post(GROQ_API_URL, headers={
+            'Authorization': f'Bearer {GROQ_API_KEY}',
+            'Content-Type': 'application/json'
+        }, json={
+            'model': 'llama-3.3-70b-versatile',
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': 500
+        })
+
+        if not response.ok:
+            error_data = response.json().get('error', {})
+            error_message = error_data.get('message', 'Unknown error')
+            error_code = error_data.get('code', 'unknown')
+            logger.error(f"Groq API request failed: Status {response.status_code} - {error_message} (code: {error_code})")
+            return jsonify({'error': f"Groq API error: {error_message}"}), response.status_code
+
+        result = response.json()
+        response_text = result['choices'][0]['message']['content']
+        logger.info(f"Groq API response: {response_text}")
+        return jsonify({'response': response_text})
+
+    except Exception as e:
+        logger.error(f"Error processing /api/ask request: {str(e)}")
+        return jsonify({'error': f"Failed to process request: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    logger.info("Starting Flask application on port 5000")
-    app.run(debug=False, port=5000)
+    logger.info("Starting Flask application")
+    app.run(debug=True, host='0.0.0.0', port=5000)

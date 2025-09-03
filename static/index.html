@@ -388,6 +388,20 @@
         <p id="guava-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
       </div>
     </div>
+    <div class="mt-6">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">❓ Ask About Your Crops</h2>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <select id="crop-selection" class="bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+          <option value="Pomegranate">Pomegranate</option>
+          <option value="Guava">Guava</option>
+        </select>
+        <input type="text" id="crop-question" placeholder="Ask a question about your crop..." class="flex-grow bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+        <button id="submit-question" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
+          Submit Question
+        </button>
+      </div>
+      <div id="crop-response" class="mt-4 text-gray-600 text-sm sm:text-base hidden">Response will appear here...</div>
+    </div>
   </div>
 
   <div class="max-w-7xl mx-auto mb-8">
@@ -517,11 +531,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">From</label>
-            <input type="datetime-local" id="start-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+            <input type="datetime-local" id="start-date" class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">To</label>
-            <input type="datetime-local" id="end-date" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+            <input type="datetime-local" id="end-date" class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
           </div>
         </div>
         <button id="apply-custom" class="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
@@ -602,6 +616,7 @@
     const INFLUXDB_ORG = 'Agri';
     const INFLUXDB_BUCKET = 'smart_agri';
     const FLASK_API_URL = '/api/recommendations';
+    const ASK_API_URL = '/api/ask';
     const DATA_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
     const RECOMMENDATION_COOLDOWN = 5 * 1000; // 5 seconds cooldown
 
@@ -903,43 +918,102 @@
       }
     }
 
-async function fetchRecommendations(source = 'unknown') {
-  const now = Date.now();
-  if (isFetchingRecommendations) {
-    console.log(`Blocked fetchRecommendations (already in progress) at ${new Date().toLocaleString()} from ${source}`);
-    return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, data: {} };
-  }
-  if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
-    console.log(`Blocked fetchRecommendations (within cooldown) at ${new Date().toLocaleString()} from ${source}`);
-    return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, data: {} };
-  }
+    async function fetchRecommendations(source = 'unknown') {
+      const now = Date.now();
+      if (isFetchingRecommendations) {
+        console.log(`Blocked fetchRecommendations (already in progress) at ${new Date().toLocaleString()} from ${source}`);
+        return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, data: {} };
+      }
+      if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
+        console.log(`Blocked fetchRecommendations (within cooldown) at ${new Date().toLocaleString()} from ${source}`);
+        return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, data: {} };
+      }
 
-  isFetchingRecommendations = true;
-  lastRecommendationFetch = now;
-  console.log(`Fetching recommendations from ${FLASK_API_URL} at ${new Date().toLocaleString()} from ${source}`);
-  
-  try {
-    const response = await fetch(FLASK_API_URL, {
-      cache: 'no-store'
-    });
-    console.log('Response status:', response.status, 'URL:', FLASK_API_URL);
-    console.log('Response headers:', [...response.headers]);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Response error text:', errorText);
-      throw new Error(`HTTP error! Status: ${response.status}, ${errorText}`);
+      isFetchingRecommendations = true;
+      lastRecommendationFetch = now;
+      console.log(`Fetching recommendations at ${new Date().toLocaleString()} from ${source}`);
+      
+      try {
+        const response = await fetch(FLASK_API_URL, {
+          cache: 'no-store'
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(`Fetched recommendations from ${source}:`, data.recommendations);
+        return data;
+      } catch (error) {
+        console.error(`Error fetching recommendations from ${source}:`, error);
+        showError('Failed to fetch recommendations. Please check the server connection.');
+        return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, data: {} };
+      } finally {
+        isFetchingRecommendations = false;
+      }
     }
-    const data = await response.json();
-    console.log(`Fetched recommendations from ${source}:`, data);
-    return data;
-  } catch (error) {
-    console.error(`Error fetching recommendations from ${source}:`, error);
-    showError('Failed to fetch recommendations. Please check the server connection.');
-    return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, data: {} };
-  } finally {
-    isFetchingRecommendations = false;
-  }
-}
+
+    async function fetchCropResponse(crop, question) {
+      const now = Date.now();
+      if (isFetchingRecommendations) {
+        console.log(`Blocked fetchCropResponse (already in progress) at ${new Date().toLocaleString()}`);
+        return 'Request in progress...';
+      }
+      if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
+        console.log(`Blocked fetchCropResponse (within cooldown) at ${new Date().toLocaleString()}`);
+        return 'Please wait before requesting again.';
+      }
+
+      isFetchingRecommendations = true;
+      lastRecommendationFetch = now;
+      console.log(`Fetching crop response for ${crop} at ${new Date().toLocaleString()}`);
+
+      try {
+        const { data } = await getLatestCurrentData();
+        const temp = data.temperature || 'unknown';
+        const humidity = data.humidity || 'unknown';
+        const soil_moisture = data.soil_moisture || 'unknown';
+        const rain_intensity = data.rain_intensity ? getRainStatus(parseInt(data.rain_intensity)) : 'unknown';
+        const wind_speed = data.wind_speed || 'unknown';
+        const motion_detected = data.motion_detected ? (data.motion_detected === '1' ? 'detected' : 'not detected') : 'unknown';
+
+        const prompt = `
+          You are an agricultural expert providing advice for ${crop} based on the following sensor data from a farm:
+          - Temperature: ${temp} °C
+          - Humidity: ${humidity} %
+          - Soil Moisture: ${soil_moisture} %
+          - Rainfall: ${rain_intensity}
+          - Wind Speed: ${wind_speed} m/s
+          - Motion Detected: ${motion_detected}
+
+          The user has asked: "${question}"
+
+          Provide a concise, specific response to the user's question, considering the provided sensor data and its impact on ${crop} growth and health.
+        `;
+
+        const response = await fetch(ASK_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log(`Fetched crop response for ${crop}:`, result.response);
+        return result.response || 'No response available.';
+      } catch (error) {
+        console.error(`Error fetching crop response for ${crop}:`, error);
+        showError('Failed to fetch crop response. Please check the server connection.');
+        return 'Error fetching response.';
+      } finally {
+        isFetchingRecommendations = false;
+      }
+    }
+
     async function getLatestCurrentData() {
       let latestData = await fetchSensorData('-10m');
       let dataTime = latestData && latestData._time ? new Date(latestData._time) : null;
@@ -1331,14 +1405,17 @@ async function fetchRecommendations(source = 'unknown') {
       const timeRangeSelect = document.getElementById('time-range');
       const applyCustomButton = document.getElementById('apply-custom');
       const generateRecommendationButton = document.getElementById('generate-recommendation');
+      const submitQuestionButton = document.getElementById('submit-question');
 
       timeRangeSelect.replaceWith(timeRangeSelect.cloneNode(true));
       applyCustomButton.replaceWith(applyCustomButton.cloneNode(true));
       generateRecommendationButton.replaceWith(generateRecommendationButton.cloneNode(true));
+      submitQuestionButton.replaceWith(submitQuestionButton.cloneNode(true));
 
       const newTimeRangeSelect = document.getElementById('time-range');
       const newApplyCustomButton = document.getElementById('apply-custom');
       const newGenerateRecommendationButton = document.getElementById('generate-recommendation');
+      const newSubmitQuestionButton = document.getElementById('submit-question');
 
       newTimeRangeSelect.addEventListener('change', function(e) {
         currentTimeRange = e.target.value;
@@ -1377,6 +1454,30 @@ async function fetchRecommendations(source = 'unknown') {
           console.error('Error generating new recommendation:', error);
           showError('Failed to generate new recommendations. Please try again.');
           updateRecommendations({ pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' });
+        }
+      }, 1000));
+
+      newSubmitQuestionButton.addEventListener('click', debounce(async function() {
+        const crop = document.getElementById('crop-selection').value;
+        const question = document.getElementById('crop-question').value.trim();
+        const responseDiv = document.getElementById('crop-response');
+        
+        if (!question) {
+          responseDiv.textContent = 'Please enter a question.';
+          responseDiv.classList.remove('hidden');
+          return;
+        }
+
+        responseDiv.textContent = 'Fetching response...';
+        responseDiv.classList.remove('hidden');
+
+        try {
+          const response = await fetchCropResponse(crop, question);
+          responseDiv.textContent = response;
+          hideError();
+        } catch (error) {
+          responseDiv.textContent = 'Error fetching response.';
+          showError('Failed to fetch crop response. Please try again.');
         }
       }, 1000));
     }
