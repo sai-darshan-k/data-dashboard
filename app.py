@@ -130,7 +130,7 @@ def get_grok_recommendations(data):
     motion_detected = 'detected' if data.get('motion_detected') == '1' else 'not detected'
 
     prompt = f"""
-    You are an agricultural expert providing recommendations for Pomegranate and Guava plants based on the following sensor data from a farm:
+    You are an agricultural expert providing recommendations for Pomegranate in Flowering stage and Guava plants that is in Fruitning stage, based on the following sensor data from a farm:
     - Temperature: {temp} °C
     - Humidity: {humidity} %
     - Soil Moisture: {soil_moisture} %
