@@ -211,7 +211,9 @@ def analyze_historical_trends(historical_data):
         if len(humidities) >= 2:
             humidity_trend = "increasing" if humidities[-1] > humidities[0] else "decreasing" if humidities[-1] < humidities[0] else "stable"
             avg_humidity = statistics.mean(humidities)
-            trends.append(f"Humidity: {humidity_trend} trend, avg {avg_humidity:.1f}%")
+            max_humidity = max(humidities)
+            min_humidity = min(humidities)
+            trends.append(f"Humidity: {humidity_trend} trend, avg {avg_humidity:.1f}%, range {min_humidity:.1f}-{max_humidity:.1f}%")
         
         # Soil moisture trends
         if len(soil_moistures) >= 2:
@@ -223,7 +225,8 @@ def analyze_historical_trends(historical_data):
         if len(wind_speeds) >= 2:
             avg_wind = statistics.mean(wind_speeds)
             max_wind = max(wind_speeds)
-            trends.append(f"Wind: avg {avg_wind:.1f} m/s, max {max_wind:.1f} m/s")
+            min_wind = min(wind_speeds)
+            trends.append(f"Wind: avg {avg_wind:.1f} m/s, range {min_wind:.1f}-{max_wind:.1f} m/s")
         
         # Rain patterns
         rain_events = [get_rain_status(r) for r in rain_intensities if r is not None]
@@ -238,6 +241,15 @@ def analyze_historical_trends(historical_data):
     except Exception as e:
         logger.error(f"Error analyzing historical trends: {str(e)}")
         return "Error analyzing historical trends."
+
+def clean_json_string(s):
+    """Remove control characters and invalid JSON characters from a string."""
+    # Remove control characters (like \n, \t, etc.) except for valid JSON whitespace
+    control_chars = ''.join(map(chr, range(0, 32)))  # All control characters
+    control_chars = control_chars.replace('\n', '').replace('\r', '').replace('\t', '')  # Allow JSON-compatible whitespace
+    for char in control_chars:
+        s = s.replace(char, '')
+    return s
 
 def get_grok_recommendations(data):
     if not data:
@@ -312,8 +324,9 @@ def get_grok_recommendations(data):
         recommendations = result['choices'][0]['message']['content']
         logger.info(f"Raw Groq API response: ```json\n{recommendations}\n```")
         
-        # Strip Markdown code block markers if present
+        # Strip Markdown code block markers and clean control characters
         cleaned_response = re.sub(r'^```json\n|\n```$', '', recommendations.strip())
+        cleaned_response = clean_json_string(cleaned_response)
         
         try:
             parsed_recommendations = json.loads(cleaned_response)
