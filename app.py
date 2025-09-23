@@ -280,6 +280,8 @@ def get_grok_recommendations(data):
 
     Based on both current conditions AND the 24-hour historical patterns, provide specific, actionable recommendations for each crop to optimize growth and health. Consider how the recent weather patterns and trends should influence immediate care decisions.
 
+    Format the response in plain text without any markdown formatting like ** or *. Use 'Section Name:' for sections. Use - for bullet points, ensuring they are aligned properly with newlines. Use 1. 2. etc. for numbered lists.
+
     Return the response in JSON format with keys 'pomegranate', 'guava', and 'historical_summary', each containing a string with recommendations.
     """
     logger.debug(f"Groq API prompt: {prompt}")
@@ -426,6 +428,7 @@ def ask_crop_question():
         USER QUESTION: {prompt}
 
         Provide a comprehensive response considering both current conditions and recent historical patterns.
+        Format the response in plain text without any markdown formatting like ** or *. Use 'Section Name:' for sections. Use - for bullet points, ensuring they are aligned properly with newlines. Use 1. 2. etc. for numbered lists.
         """
 
         response = requests.post(GROQ_API_URL, headers={
