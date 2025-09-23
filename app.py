@@ -10,6 +10,8 @@ import re
 import logging
 from cachetools import TTLCache
 from datetime import datetime
+import pandas as pd
+import numpy as np
 
 app = Flask(__name__, static_folder="../static")
 CORS(app)  # Enable CORS to allow frontend requests
@@ -166,6 +168,27 @@ def fetch_historical_data(range="-24h", aggregate_window="1h"):
         logger.error(f"Error fetching historical data for range {range}: {str(e)}")
         return []
 
+def analyze_historical_data(data, metric, time_range):
+    if not data:
+        return None
+    df = pd.DataFrame(data)
+    df = df[df[metric].notnull() & (df[metric] != "null")]
+    if df.empty:
+        return None
+    try:
+        df[metric] = df[metric].astype(float)
+        if "min" in time_range.lower():
+            return df[metric].min()
+        elif "max" in time_range.lower():
+            return df[metric].max()
+        elif "avg" in time_range.lower() or "average" in time_range.lower():
+            return df[metric].mean()
+        else:
+            return df[metric].mean()  # Default to average if no specific operation
+    except (ValueError, TypeError) as e:
+        logger.error(f"Error analyzing metric {metric}: {str(e)}")
+        return None
+
 def get_grok_recommendations(data_list):
     if not data_list or not isinstance(data_list, list) or len(data_list) == 0:
         logger.warning("No historical sensor data provided for recommendations")
@@ -288,16 +311,58 @@ def ask_crop_question():
             logger.error("Invalid request: Missing 'prompt' in request body")
             return jsonify({"error": "Missing prompt in request body"}), 400
 
-        prompt = request_data["prompt"]
+        prompt = request_data["prompt"].lower()
+        logger.debug(f"Received prompt: {prompt}")
 
-        # Fetch historical data for the last 7 days
-        historical_data = fetch_historical_data("-7d", "6h")
+        # Extract time range from prompt if present
+        time_range = "-7d"  # Default to 7 days as specified
+        if "last 24 hours" in prompt or "past 24 hours" in prompt:
+            time_range = "-24h"
+        elif "last 7 days" in prompt or "past 7 days" in prompt:
+            time_range = "-7d"
+        elif "last 3 days" in prompt or "past 3 days" in prompt:
+            time_range = "-3d"
+        elif "last month" in prompt or "past month" in prompt:
+            time_range = "-30d"
+
+        aggregate_window = "6h" if time_range == "-7d" else "1h"
+
+        # Fetch historical data for the specified time range
+        historical_data = fetch_historical_data(time_range, aggregate_window)
         if not historical_data:
-            logger.warning("No historical data available for last 7 days")
+            logger.warning(f"No historical data available for {time_range}, falling back to recent data")
             data = fetch_sensor_data("-10m") or fetch_sensor_data("-1d") or fetch_sensor_data("-7d")
             historical_data = [data] if data else []
 
-        # Aggregate data for the prompt
+        # Analyze data for specific metrics if the prompt requests them
+        metric = None
+        metric_value = None
+        if "temperature" in prompt:
+            metric = "temperature"
+            if "minimum" in prompt or "min" in prompt:
+                metric_value = analyze_historical_data(historical_data, "temperature", "min")
+            elif "maximum" in prompt or "max" in prompt:
+                metric_value = analyze_historical_data(historical_data, "temperature", "max")
+            elif "average" in prompt or "avg" in prompt:
+                metric_value = analyze_historical_data(historical_data, "temperature", "avg")
+        elif "humidity" in prompt:
+            metric = "humidity"
+            if "minimum" in prompt or "min" in prompt:
+                metric_value = analyze_historical_data(historical_data, "humidity", "min")
+            elif "maximum" in prompt or "max" in prompt:
+                metric_value = analyze_historical_data(historical_data, "humidity", "max")
+            elif "average" in prompt or "avg" in prompt:
+                metric_value = analyze_historical_data(historical_data, "humidity", "avg")
+        elif "soil moisture" in prompt:
+            metric = "soil_moisture"
+            if "minimum" in prompt or "min" in prompt:
+                metric_value = analyze_historical_data(historical_data, "soil_moisture", "min")
+            elif "maximum" in prompt or "max" in prompt:
+                metric_value = analyze_historical_data(historical_data, "soil_moisture", "max")
+            elif "average" in prompt or "avg" in prompt:
+                metric_value = analyze_historical_data(historical_data, "soil_moisture", "avg")
+
+        # Aggregate data for context
         temp_avg = sum(d.get("temperature", 0) for d in historical_data if isinstance(d.get("temperature"), (int, float))) / max(
             1, sum(1 for d in historical_data if isinstance(d.get("temperature"), (int, float)))
         )
@@ -318,20 +383,27 @@ def ask_crop_question():
         )
         motion_detected = "detected" if any(d.get("motion_detected") == "1" for d in historical_data) else "not detected"
 
-        enhanced_prompt = f"""
-        You are an agricultural expert providing advice based on the following average sensor data from a farm over the last 7 days:
-        - Temperature: {temp_avg:.1f} °C
-        - Humidity: {humidity_avg:.1f} %
-        - Soil Moisture: {soil_moisture_avg:.1f} %
+        # Construct RAG-style prompt
+        data_context = f"""
+        Sensor data summary for the last {time_range.replace('-', '')}:
+        - Average Temperature: {temp_avg:.1f} °C
+        - Average Humidity: {humidity_avg:.1f} %
+        - Average Soil Moisture: {soil_moisture_avg:.1f} %
         - Rainfall: {rain_status}
-        - Wind Speed: {wind_speed_avg:.2f} m/s
+        - Average Wind Speed: {wind_speed_avg:.2f} m/s
         - Motion Detected: {motion_detected}
-
-        The user has asked: "{prompt}"
-
-        Provide a concise, specific response to the user's question, considering the provided sensor data and its impact on crop growth and health.
         """
-        logger.debug(f"Received prompt: {prompt}")
+        if metric and metric_value is not None:
+            data_context += f"- {metric.replace('_', ' ').title()} {'Minimum' if 'minimum' in prompt or 'min' in prompt else 'Maximum' if 'maximum' in prompt or 'max' in prompt else 'Average'}: {metric_value:.1f} {'°C' if metric == 'temperature' else '%' if metric in ['humidity', 'soil_moisture'] else ''}\n"
+
+        enhanced_prompt = f"""
+        You are an agricultural expert providing advice for crop management based on historical sensor data. The user has asked: "{prompt}"
+
+        Below is the relevant sensor data for the specified time range:
+        {data_context}
+
+        Provide a concise, specific response to the user's question, using the provided sensor data to ground your answer. Focus on the crop mentioned in the question and its growth stage, if specified, and ensure the response is accurate and relevant to the data.
+        """
         logger.debug(f"Enhanced prompt: {enhanced_prompt}")
 
         response = requests.post(
