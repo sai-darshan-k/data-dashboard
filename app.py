@@ -217,9 +217,7 @@ def analyze_historical_trends(historical_data):
         if len(humidities) >= 2:
             humidity_trend = "increasing" if humidities[-1] > humidities[0] else "decreasing" if humidities[-1] < humidities[0] else "stable"
             avg_humidity = statistics.mean(humidities)
-            max_humidity = max(humidities)
-            min_humidity = min(humidities)
-            trends.append(f"Humidity: {humidity_trend} trend, avg {avg_humidity:.1f}%, range {min_humidity:.1f}-{max_humidity:.1f}%")
+            trends.append(f"Humidity: {humidity_trend} trend, avg {avg_humidity:.1f}%")
         
         # Soil moisture trends
         if len(soil_moistures) >= 2:
@@ -229,10 +227,9 @@ def analyze_historical_trends(historical_data):
         
         # Wind patterns
         if len(wind_speeds) >= 2:
-            avg_wind = statistics.mean(wind_speeds)
-            max_wind = max(wind_speeds)
             min_wind = min(wind_speeds)
-            trends.append(f"Wind: avg {avg_wind:.1f} m/s, range {min_wind:.1f}-{max_wind:.1f} m/s")
+            max_wind = max(wind_speeds)
+            trends.append(f"Wind: min {min_wind:.1f} m/s, max {max_wind:.1f} m/s")
         
         # Rain patterns
         rain_events = [get_rain_status(r) for r in rain_intensities if r is not None]
@@ -319,7 +316,7 @@ def get_grok_recommendations(data):
 
     Format the response in plain text without any markdown formatting like ** or *. Use 'Section Name:' for sections. Use - for bullet points, ensuring they are aligned properly with newlines. Use 1. 2. etc. for numbered lists.
 
-    Return the response in JSON format with keys 'pomegranate', 'guava', and 'historical_summary', each containing a string with recommendations.
+    Return the response in JSON format with keys 'pomegranate' and 'guava', each containing a string with recommendations.
     """
     logger.debug(f"Groq API prompt: {prompt}")
 
@@ -363,9 +360,8 @@ def get_grok_recommendations(data):
             if not isinstance(parsed_recommendations, dict) or "pomegranate" not in parsed_recommendations or "guava" not in parsed_recommendations:
                 raise ValueError("Invalid JSON structure: missing 'pomegranate' or 'guava' keys")
             
-            # Ensure historical_summary is included
-            if "historical_summary" not in parsed_recommendations:
-                parsed_recommendations["historical_summary"] = historical_summary
+            # Always include the local historical_summary
+            parsed_recommendations["historical_summary"] = historical_summary
             
             recommendation_cache[cache_key] = parsed_recommendations
             logger.info("Successfully parsed and cached recommendations with historical context")
