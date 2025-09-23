@@ -382,10 +382,12 @@
       <div>
         <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Pomegranate(Flowering)</h3>
         <p id="pomegranate-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
+        <p id="pomegranate-data-source" class="text-xs text-gray-500 mt-2"></p>
       </div>
       <div>
         <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Guava(Fruiting)</h3>
         <p id="guava-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
+        <p id="guava-data-source" class="text-xs text-gray-500 mt-2"></p>
       </div>
     </div>
     <div class="mt-6">
@@ -395,7 +397,7 @@
           <option value="Pomegranate">Pomegranate</option>
           <option value="Guava">Guava</option>
         </select>
-        <input type="text" id="crop-question" placeholder="Ask a question about your crop..." class="flex-grow bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+        <input type="text" id="crop-question" placeholder="Ask a question about your crop (e.g., 'minimum temperature last 24 hours')" class="flex-grow bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
         <button id="submit-question" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
           Submit Question
         </button>
@@ -922,11 +924,11 @@
       const now = Date.now();
       if (isFetchingRecommendations) {
         console.log(`Blocked fetchRecommendations (already in progress) at ${new Date().toLocaleString()} from ${source}`);
-        return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, data: {} };
+        return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
       }
       if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
         console.log(`Blocked fetchRecommendations (within cooldown) at ${new Date().toLocaleString()} from ${source}`);
-        return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, data: {} };
+        return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
       }
 
       isFetchingRecommendations = true;
@@ -941,12 +943,12 @@
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        console.log(`Fetched recommendations from ${source}:`, data.recommendations);
+        console.log(`Fetched recommendations from ${source}:`, data);
         return data;
       } catch (error) {
         console.error(`Error fetching recommendations from ${source}:`, error);
         showError('Failed to fetch recommendations. Please check the server connection.');
-        return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, data: {} };
+        return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
       } finally {
         isFetchingRecommendations = false;
       }
@@ -968,34 +970,12 @@
       console.log(`Fetching crop response for ${crop} at ${new Date().toLocaleString()}`);
 
       try {
-        const { data } = await getLatestCurrentData();
-        const temp = data.temperature || 'unknown';
-        const humidity = data.humidity || 'unknown';
-        const soil_moisture = data.soil_moisture || 'unknown';
-        const rain_intensity = data.rain_intensity ? getRainStatus(parseInt(data.rain_intensity)) : 'unknown';
-        const wind_speed = data.wind_speed || 'unknown';
-        const motion_detected = data.motion_detected ? (data.motion_detected === '1' ? 'detected' : 'not detected') : 'unknown';
-
-        const prompt = `
-          You are an agricultural expert providing advice for ${crop} based on the following sensor data from a farm:
-          - Temperature: ${temp} °C
-          - Humidity: ${humidity} %
-          - Soil Moisture: ${soil_moisture} %
-          - Rainfall: ${rain_intensity}
-          - Wind Speed: ${wind_speed} m/s
-          - Motion Detected: ${motion_detected}
-
-          The user has asked: "${question}"
-
-          Provide a concise, specific response to the user's question, considering the provided sensor data and its impact on ${crop} growth and health.
-        `;
-
         const response = await fetch(ASK_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ prompt: `${crop}: ${question}` })
         });
 
         if (!response.ok) {
@@ -1007,7 +987,7 @@
         return result.response || 'No response available.';
       } catch (error) {
         console.error(`Error fetching crop response for ${crop}:`, error);
-        showError('Failed to fetch crop response. Please check the server connection.');
+        showError('Failed to fetch crop response. Please try again.');
         return 'Error fetching response.';
       } finally {
         isFetchingRecommendations = false;
@@ -1084,11 +1064,25 @@
         `Now: ${new Date().toLocaleString()}`;
     }
 
-    function updateRecommendations(recommendations) {
-      document.getElementById('pomegranate-recommendation').textContent = 
-        recommendations.pomegranate || 'No recommendations available.';
-      document.getElementById('guava-recommendation').textContent = 
-        recommendations.guava || 'No recommendations available.';
+    function updateRecommendations(response) {
+      const { recommendations, data_source } = response;
+      const pomegranateRecommendation = document.getElementById('pomegranate-recommendation');
+      const guavaRecommendation = document.getElementById('guava-recommendation');
+      const pomegranateDataSource = document.getElementById('pomegranate-data-source');
+      const guavaDataSource = document.getElementById('guava-data-source');
+
+      pomegranateRecommendation.textContent = recommendations.pomegranate || 'No recommendations available.';
+      guavaRecommendation.textContent = recommendations.guava || 'No recommendations available.';
+      
+      const dataSourceText = data_source === '24hr_average' ? 'Based on 24-hour average data' : 'Based on fallback data (recent readings)';
+      pomegranateDataSource.textContent = dataSourceText;
+      guavaDataSource.textContent = dataSourceText;
+
+      if (data_source === 'fallback') {
+        showError('No 24-hour data available, using recent data as fallback.');
+      } else {
+        hideError();
+      }
     }
 
     function getRainStatus(value) {
@@ -1295,7 +1289,7 @@
 
       try {
         const { data, range } = await getLatestCurrentData();
-        let recommendations;
+        let response;
 
         if (Object.keys(data).length === 0) {
           updateCurrentMetrics({
@@ -1306,14 +1300,13 @@
             wind_speed: null,
             motion_detected: null
           }, false);
-          recommendations = { pomegranate: 'No data available.', guava: 'No data available.' };
+          response = { recommendations: { pomegranate: 'No data available.', guava: 'No data available.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
         } else {
-          const response = await fetchRecommendations('initial-load');
-          recommendations = response.recommendations;
+          response = await fetchRecommendations('initial-load');
           updateCurrentMetrics(data, false);
         }
         
-        updateRecommendations(recommendations);
+        updateRecommendations(response);
         await updateCharts();
       } catch (error) {
         console.error('Error updating dashboard:', error);
@@ -1326,7 +1319,7 @@
           wind_speed: null,
           motion_detected: null
         }, false);
-        updateRecommendations({ pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' });
+        updateRecommendations({ recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' });
       }
     }
 
@@ -1448,12 +1441,11 @@
         console.log('Generate New Recommendation button clicked at:', new Date().toLocaleString());
         try {
           const response = await fetchRecommendations('button-click');
-          updateRecommendations(response.recommendations);
-          hideError();
+          updateRecommendations(response);
         } catch (error) {
           console.error('Error generating new recommendation:', error);
           showError('Failed to generate new recommendations. Please try again.');
-          updateRecommendations({ pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' });
+          updateRecommendations({ recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' });
         }
       }, 1000));
 
