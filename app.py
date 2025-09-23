@@ -11,6 +11,7 @@ import logging
 from cachetools import TTLCache
 from datetime import datetime, timedelta
 import statistics
+import uuid
 
 app = Flask(__name__, static_folder="../static")
 CORS(app)  # Enable CORS to allow frontend requests
@@ -191,7 +192,7 @@ def fetch_historical_24h_data():
         return []
 
 def analyze_historical_trends(historical_data):
-    """Analyze 24-hour trends and patterns"""
+    """Analyze 24-hour trends and patterns with modified wind and humidity metrics"""
     if not historical_data:
         return "No historical data available for trend analysis."
     
@@ -213,11 +214,12 @@ def analyze_historical_trends(historical_data):
             min_temp = min(temps)
             trends.append(f"Temperature: {temp_trend} trend, avg {avg_temp:.1f}°C, range {min_temp:.1f}-{max_temp:.1f}°C")
         
-        # Humidity trends
+        # Humidity trends (avg, min, max)
         if len(humidities) >= 2:
-            humidity_trend = "increasing" if humidities[-1] > humidities[0] else "decreasing" if humidities[-1] < humidities[0] else "stable"
             avg_humidity = statistics.mean(humidities)
-            trends.append(f"Humidity: {humidity_trend} trend, avg {avg_humidity:.1f}%")
+            min_humidity = min(humidities)
+            max_humidity = max(humidities)
+            trends.append(f"Humidity: avg {avg_humidity:.1f}%, min {min_humidity:.1f}%, max {max_humidity:.1f}%")
         
         # Soil moisture trends
         if len(soil_moistures) >= 2:
@@ -225,11 +227,11 @@ def analyze_historical_trends(historical_data):
             avg_soil = statistics.mean(soil_moistures)
             trends.append(f"Soil moisture: {soil_trend} trend, avg {avg_soil:.1f}%")
         
-        # Wind patterns
+        # Wind patterns (avg and max only)
         if len(wind_speeds) >= 2:
-            min_wind = min(wind_speeds)
+            avg_wind = statistics.mean(wind_speeds)
             max_wind = max(wind_speeds)
-            trends.append(f"Wind: min {min_wind:.1f} m/s, max {max_wind:.1f} m/s")
+            trends.append(f"Wind: avg {avg_wind:.1f} m/s, max {max_wind:.1f} m/s")
         
         # Rain patterns
         rain_events = [get_rain_status(r) for r in rain_intensities if r is not None]
@@ -312,9 +314,9 @@ def get_grok_recommendations(data):
     24-HOUR HISTORICAL TRENDS:
     {historical_summary}
 
-    Based on both current conditions AND the 24-hour historical patterns, provide specific, actionable recommendations for each crop to optimize growth and health. Consider how the recent weather patterns and trends should influence immediate care decisions.
+    Based on both current conditions AND the 24-hour historical patterns, provide specific, actionable recommendations for each crop to optimize growth and health. Consider how the recent weather patterns and trends should influence immediate care decisions. Limit recommendations to 5 concise lines per crop.
 
-    Format the response in plain text without any markdown formatting like ** or *. Use 'Section Name:' for sections. Use - for bullet points, ensuring they are aligned properly with newlines. Use 1. 2. etc. for numbered lists.
+    Format the response in plain text without any markdown formatting like ** or *. Use 'Pomegranate Recommendations:' and 'Guava Recommendations:' for sections. Use - for bullet points, ensuring they are aligned properly with newlines.
 
     Return the response in JSON format with keys 'pomegranate' and 'guava', each containing a string with recommendations.
     """
@@ -331,7 +333,7 @@ def get_grok_recommendations(data):
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 800,
+                "max_tokens": 400,  # Reduced max_tokens for concise responses
             },
         )
 
