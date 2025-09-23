@@ -71,6 +71,14 @@
       height: 300px;
     }
 
+    .historical-context {
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(67, 56, 202, 0.1));
+      border: 2px solid rgba(79, 70, 229, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
     @media (max-width: 640px) {
       .chart-container {
         height: 200px;
@@ -373,23 +381,28 @@
 
   <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-8 max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg sm:text-xl font-bold text-gray-800">🌱 Crop Recommendations</h2>
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800">🌱 AI Crop Recommendations</h2>
       <button id="generate-recommendation" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
         Generate New Recommendation
       </button>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Pomegranate(Flowering)</h3>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Pomegranate (Flowering)</h3>
         <p id="pomegranate-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
-        <p id="pomegranate-data-source" class="text-xs text-gray-500 mt-2"></p>
       </div>
       <div>
-        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Guava(Fruiting)</h3>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-700 mb-2">Guava (Fruiting)</h3>
         <p id="guava-recommendation" class="text-gray-600 text-sm sm:text-base">Loading recommendations...</p>
-        <p id="guava-data-source" class="text-xs text-gray-500 mt-2"></p>
       </div>
     </div>
+    
+    <!-- Historical Context Section -->
+    <div class="historical-context">
+      <h3 class="text-base sm:text-lg font-semibold text-indigo-800 mb-2">📈 24-Hour Historical Context</h3>
+      <p id="historical-summary" class="text-indigo-700 text-sm sm:text-base">Loading historical analysis...</p>
+    </div>
+
     <div class="mt-6">
       <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">❓ Ask About Your Crops</h2>
       <div class="flex flex-col sm:flex-row gap-4">
@@ -397,7 +410,7 @@
           <option value="Pomegranate">Pomegranate</option>
           <option value="Guava">Guava</option>
         </select>
-        <input type="text" id="crop-question" placeholder="Ask a question about your crop (e.g., 'minimum temperature last 24 hours')" class="flex-grow bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+        <input type="text" id="crop-question" placeholder="Ask a question about your crop..." class="flex-grow bg-white border-2 border-blue-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
         <button id="submit-question" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
           Submit Question
         </button>
@@ -779,12 +792,12 @@
       switch(currentTimeRange) {
         case '1d': return new Date(now.getTime() - 24 * 60 * 60 * 1000);
         case '3d': return new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 1000);
-        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 1000);
+        case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         case 'custom':
           const startDate = document.getElementById('start-date').value;
-          return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 1000);
-        default: return new Date(now.getTime() - 24 * 60 * 1000);
+          return startDate ? new Date(startDate) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        default: return new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
     }
 
@@ -924,11 +937,25 @@
       const now = Date.now();
       if (isFetchingRecommendations) {
         console.log(`Blocked fetchRecommendations (already in progress) at ${new Date().toLocaleString()} from ${source}`);
-        return { recommendations: { pomegranate: 'Request in progress...', guava: 'Request in progress...' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
+        return { 
+          recommendations: { 
+            pomegranate: 'Request in progress...', 
+            guava: 'Request in progress...',
+            historical_summary: 'Loading historical context...'
+          }, 
+          data: {} 
+        };
       }
       if (now - lastRecommendationFetch < RECOMMENDATION_COOLDOWN) {
         console.log(`Blocked fetchRecommendations (within cooldown) at ${new Date().toLocaleString()} from ${source}`);
-        return { recommendations: { pomegranate: 'Please wait before requesting again.', guava: 'Please wait before requesting again.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
+        return { 
+          recommendations: { 
+            pomegranate: 'Please wait before requesting again.', 
+            guava: 'Please wait before requesting again.',
+            historical_summary: 'Historical analysis available after cooldown.'
+          }, 
+          data: {} 
+        };
       }
 
       isFetchingRecommendations = true;
@@ -943,12 +970,19 @@
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        console.log(`Fetched recommendations from ${source}:`, data);
+        console.log(`Fetched recommendations from ${source}:`, data.recommendations);
         return data;
       } catch (error) {
         console.error(`Error fetching recommendations from ${source}:`, error);
         showError('Failed to fetch recommendations. Please check the server connection.');
-        return { recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
+        return { 
+          recommendations: { 
+            pomegranate: 'Error fetching recommendations.', 
+            guava: 'Error fetching recommendations.',
+            historical_summary: 'Error analyzing historical data.'
+          }, 
+          data: {} 
+        };
       } finally {
         isFetchingRecommendations = false;
       }
@@ -970,12 +1004,20 @@
       console.log(`Fetching crop response for ${crop} at ${new Date().toLocaleString()}`);
 
       try {
+        const prompt = `
+          You are an agricultural expert providing advice for ${crop} based on current and historical sensor data from a farm.
+          
+          The user has asked: "${question}"
+
+          Provide a concise, specific response to the user's question, considering both current conditions and recent 24-hour historical patterns to optimize ${crop} growth and health.
+        `;
+
         const response = await fetch(ASK_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ prompt: `${crop}: ${question}` })
+          body: JSON.stringify({ prompt })
         });
 
         if (!response.ok) {
@@ -987,7 +1029,7 @@
         return result.response || 'No response available.';
       } catch (error) {
         console.error(`Error fetching crop response for ${crop}:`, error);
-        showError('Failed to fetch crop response. Please try again.');
+        showError('Failed to fetch crop response. Please check the server connection.');
         return 'Error fetching response.';
       } finally {
         isFetchingRecommendations = false;
@@ -1064,24 +1106,19 @@
         `Now: ${new Date().toLocaleString()}`;
     }
 
-    function updateRecommendations(response) {
-      const { recommendations, data_source } = response;
-      const pomegranateRecommendation = document.getElementById('pomegranate-recommendation');
-      const guavaRecommendation = document.getElementById('guava-recommendation');
-      const pomegranateDataSource = document.getElementById('pomegranate-data-source');
-      const guavaDataSource = document.getElementById('guava-data-source');
-
-      pomegranateRecommendation.textContent = recommendations.pomegranate || 'No recommendations available.';
-      guavaRecommendation.textContent = recommendations.guava || 'No recommendations available.';
+    function updateRecommendations(recommendations) {
+      document.getElementById('pomegranate-recommendation').textContent = 
+        recommendations.pomegranate || 'No recommendations available.';
+      document.getElementById('guava-recommendation').textContent = 
+        recommendations.guava || 'No recommendations available.';
       
-      const dataSourceText = data_source === '24hr_average' ? 'Based on 24-hour average data' : 'Based on fallback data (recent readings)';
-      pomegranateDataSource.textContent = dataSourceText;
-      guavaDataSource.textContent = dataSourceText;
-
-      if (data_source === 'fallback') {
-        showError('No 24-hour data available, using recent data as fallback.');
+      // Update historical summary if available
+      if (recommendations.historical_summary) {
+        document.getElementById('historical-summary').textContent = 
+          recommendations.historical_summary;
       } else {
-        hideError();
+        document.getElementById('historical-summary').textContent = 
+          'Historical analysis not available.';
       }
     }
 
@@ -1289,7 +1326,7 @@
 
       try {
         const { data, range } = await getLatestCurrentData();
-        let response;
+        let recommendations;
 
         if (Object.keys(data).length === 0) {
           updateCurrentMetrics({
@@ -1300,13 +1337,18 @@
             wind_speed: null,
             motion_detected: null
           }, false);
-          response = { recommendations: { pomegranate: 'No data available.', guava: 'No data available.' }, aggregated_data: {}, current_data: {}, data_source: 'none' };
+          recommendations = { 
+            pomegranate: 'No data available.', 
+            guava: 'No data available.',
+            historical_summary: 'No historical data available.'
+          };
         } else {
-          response = await fetchRecommendations('initial-load');
+          const response = await fetchRecommendations('initial-load');
+          recommendations = response.recommendations;
           updateCurrentMetrics(data, false);
         }
         
-        updateRecommendations(response);
+        updateRecommendations(recommendations);
         await updateCharts();
       } catch (error) {
         console.error('Error updating dashboard:', error);
@@ -1319,7 +1361,11 @@
           wind_speed: null,
           motion_detected: null
         }, false);
-        updateRecommendations({ recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' });
+        updateRecommendations({ 
+          pomegranate: 'Error fetching recommendations.', 
+          guava: 'Error fetching recommendations.',
+          historical_summary: 'Error analyzing historical data.'
+        });
       }
     }
 
@@ -1441,11 +1487,16 @@
         console.log('Generate New Recommendation button clicked at:', new Date().toLocaleString());
         try {
           const response = await fetchRecommendations('button-click');
-          updateRecommendations(response);
+          updateRecommendations(response.recommendations);
+          hideError();
         } catch (error) {
           console.error('Error generating new recommendation:', error);
           showError('Failed to generate new recommendations. Please try again.');
-          updateRecommendations({ recommendations: { pomegranate: 'Error fetching recommendations.', guava: 'Error fetching recommendations.' }, aggregated_data: {}, current_data: {}, data_source: 'none' });
+          updateRecommendations({ 
+            pomegranate: 'Error fetching recommendations.', 
+            guava: 'Error fetching recommendations.',
+            historical_summary: 'Error analyzing historical data.'
+          });
         }
       }, 1000));
 
