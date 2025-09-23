@@ -224,7 +224,7 @@ def get_grok_recommendations(data_list):
     motion_detected = "detected" if any(d.get("motion_detected") == "1" for d in data_list) else "not detected"
 
     prompt = f"""
-    You are an agricultural expert providing recommendations for Pomegranate in Flowering stage and Guava plants in Fruiting stage, based on the following average sensor data from a farm over the last 24 hours:
+    You are an agricultural expert providing recommendations for Pomegranate in Flowering stage and Guava plants in Fruiting stage, consider the following historical sensor data:
     - Temperature: {temp_avg:.1f} °C
     - Humidity: {humidity_avg:.1f} %
     - Soil Moisture: {soil_moisture_avg:.1f} %
@@ -232,7 +232,7 @@ def get_grok_recommendations(data_list):
     - Wind Speed: {wind_speed_avg:.2f} m/s
     - Motion Detected: {motion_detected}
 
-    Provide specific, concise recommendations for each crop (Pomegranate and Guava) to optimize growth and health based on these conditions. Return the response in JSON format with keys 'pomegranate' and 'guava', each containing a string with recommendations.
+    Provide specific, concise recommendations for each crop (Pomegranate and Guava) to optimize growth and health based on these conditions of last 24 hours data. Return the response in JSON format with keys 'pomegranate' and 'guava', each containing a string with recommendations.
     """
     logger.debug(f"Groq API prompt: {prompt}")
 
