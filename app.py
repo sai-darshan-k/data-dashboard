@@ -192,82 +192,48 @@ def fetch_historical_24h_data():
         return []
 
 def analyze_historical_trends(historical_data):
-    """Analyze 24-hour trends and patterns with actual min/max/avg for most metrics"""
+    """Analyze 24-hour trends and patterns with modified wind and humidity metrics"""
     if not historical_data:
         return "No historical data available for trend analysis."
     
     try:
-        # Extract values for analysis - convert strings to float
-        temps = []
-        for d in historical_data:
-            if "temperature" in d and d["temperature"] is not None and d["temperature"] != "":
-                try:
-                    temps.append(float(d["temperature"]))
-                except (ValueError, TypeError):
-                    continue
-        
-        humidities = []
-        for d in historical_data:
-            if "humidity" in d and d["humidity"] is not None and d["humidity"] != "":
-                try:
-                    humidities.append(float(d["humidity"]))
-                except (ValueError, TypeError):
-                    continue
-        
-        soil_moistures = []
-        for d in historical_data:
-            if "soil_moisture" in d and d["soil_moisture"] is not None and d["soil_moisture"] != "":
-                try:
-                    soil_moistures.append(float(d["soil_moisture"]))
-                except (ValueError, TypeError):
-                    continue
-        
-        wind_speeds = []
-        for d in historical_data:
-            if "wind_speed" in d and d["wind_speed"] is not None and d["wind_speed"] != "":
-                try:
-                    wind_speeds.append(float(d["wind_speed"]))
-                except (ValueError, TypeError):
-                    continue
-        
-        rain_intensities = []
-        for d in historical_data:
-            if "rain_intensity" in d and d["rain_intensity"] is not None and d["rain_intensity"] != "":
-                try:
-                    rain_intensities.append(float(d["rain_intensity"]))
-                except (ValueError, TypeError):
-                    continue
+        # Extract values for analysis
+        temps = [d["temperature"] for d in historical_data if "temperature" in d and d["temperature"] is not None]
+        humidities = [d["humidity"] for d in historical_data if "humidity" in d and d["humidity"] is not None]
+        soil_moistures = [d["soil_moisture"] for d in historical_data if "soil_moisture" in d and d["soil_moisture"] is not None]
+        wind_speeds = [d["wind_speed"] for d in historical_data if "wind_speed" in d and d["wind_speed"] is not None]
+        rain_intensities = [d["rain_intensity"] for d in historical_data if "rain_intensity" in d and d["rain_intensity"] is not None]
         
         trends = []
         
-        # Temperature trends - min, max, avg (no trend direction)
+        # Temperature trends
         if len(temps) >= 2:
+            temp_trend = "increasing" if temps[-1] > temps[0] else "decreasing" if temps[-1] < temps[0] else "stable"
             avg_temp = statistics.mean(temps)
             max_temp = max(temps)
             min_temp = min(temps)
-            trends.append(f"Temperature: min {min_temp:.1f}°C, max {max_temp:.1f}°C, avg {avg_temp:.1f}°C")
+            trends.append(f"Temperature: {temp_trend} trend, avg {avg_temp:.1f}°C, range {min_temp:.1f}-{max_temp:.1f}°C")
         
-        # Humidity trends - min, max, avg (no trend direction)
+        # Humidity trends (avg, min, max)
         if len(humidities) >= 2:
             avg_humidity = statistics.mean(humidities)
             min_humidity = min(humidities)
             max_humidity = max(humidities)
-            trends.append(f"Humidity: min {min_humidity:.1f}%, max {max_humidity:.1f}%, avg {avg_humidity:.1f}%")
+            trends.append(f"Humidity: avg {avg_humidity:.1f}%, min {min_humidity:.1f}%, max {max_humidity:.1f}%")
         
-        # Soil moisture trends - keep existing trend logic
+        # Soil moisture trends
         if len(soil_moistures) >= 2:
             soil_trend = "increasing" if soil_moistures[-1] > soil_moistures[0] else "decreasing" if soil_moistures[-1] < soil_moistures[0] else "stable"
             avg_soil = statistics.mean(soil_moistures)
             trends.append(f"Soil moisture: {soil_trend} trend, avg {avg_soil:.1f}%")
         
-        # Wind patterns - min, max, avg (no trend direction)
+        # Wind patterns (avg and max only)
         if len(wind_speeds) >= 2:
             avg_wind = statistics.mean(wind_speeds)
-            min_wind = min(wind_speeds)
             max_wind = max(wind_speeds)
-            trends.append(f"Wind: min {min_wind:.1f} m/s, max {max_wind:.1f} m/s, avg {avg_wind:.1f} m/s")
+            trends.append(f"Wind: avg {avg_wind:.1f} m/s, max {max_wind:.1f} m/s")
         
-        # Rain patterns - keep existing logic
+        # Rain patterns
         rain_events = [get_rain_status(r) for r in rain_intensities if r is not None]
         if rain_events:
             heavy_rain_hours = rain_events.count("Heavy Rain")
