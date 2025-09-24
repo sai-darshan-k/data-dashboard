@@ -197,12 +197,46 @@ def analyze_historical_trends(historical_data):
         return "No historical data available for trend analysis."
     
     try:
-        # Extract values for analysis
-        temps = [d["temperature"] for d in historical_data if "temperature" in d and d["temperature"] is not None]
-        humidities = [d["humidity"] for d in historical_data if "humidity" in d and d["humidity"] is not None]
-        soil_moistures = [d["soil_moisture"] for d in historical_data if "soil_moisture" in d and d["soil_moisture"] is not None]
-        wind_speeds = [d["wind_speed"] for d in historical_data if "wind_speed" in d and d["wind_speed"] is not None]
-        rain_intensities = [d["rain_intensity"] for d in historical_data if "rain_intensity" in d and d["rain_intensity"] is not None]
+        # Extract values for analysis - convert strings to float
+        temps = []
+        for d in historical_data:
+            if "temperature" in d and d["temperature"] is not None and d["temperature"] != "":
+                try:
+                    temps.append(float(d["temperature"]))
+                except (ValueError, TypeError):
+                    continue
+        
+        humidities = []
+        for d in historical_data:
+            if "humidity" in d and d["humidity"] is not None and d["humidity"] != "":
+                try:
+                    humidities.append(float(d["humidity"]))
+                except (ValueError, TypeError):
+                    continue
+        
+        soil_moistures = []
+        for d in historical_data:
+            if "soil_moisture" in d and d["soil_moisture"] is not None and d["soil_moisture"] != "":
+                try:
+                    soil_moistures.append(float(d["soil_moisture"]))
+                except (ValueError, TypeError):
+                    continue
+        
+        wind_speeds = []
+        for d in historical_data:
+            if "wind_speed" in d and d["wind_speed"] is not None and d["wind_speed"] != "":
+                try:
+                    wind_speeds.append(float(d["wind_speed"]))
+                except (ValueError, TypeError):
+                    continue
+        
+        rain_intensities = []
+        for d in historical_data:
+            if "rain_intensity" in d and d["rain_intensity"] is not None and d["rain_intensity"] != "":
+                try:
+                    rain_intensities.append(float(d["rain_intensity"]))
+                except (ValueError, TypeError):
+                    continue
         
         trends = []
         
