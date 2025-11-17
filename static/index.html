@@ -355,17 +355,7 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-10px); }
     }
-/* Better chart height for week & month views */
-@media (max-width: 640px) {
-  .long-range-chart .chart-container {
-    height: 280px !important;
-  }
-}
-@media (min-width: 641px) {
-  .long-range-chart .chart-container {
-    height: 320px !important;
-  }
-}
+
     .title-glow {
       text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
     }
@@ -1576,6 +1566,20 @@ let soilMoistureRaw = latestData.soil_moisture ? parseInt(latestData.soil_moistu
     timeInterval = setInterval(() => {
       document.getElementById('current-time').textContent = `Now: ${new Date().toLocaleString()}`;
     }, 1000);
+    // Auto-adjust chart height & labels when time range changes
+document.getElementById('time-range').addEventListener('change', function(e) {
+  currentTimeRange = e.target.value;
+  
+  const chartContainers = document.querySelectorAll('.chart-container');
+  if (currentTimeRange === '7d' || currentTimeRange === '30d') {
+    chartContainers.forEach(c => c.parentElement.classList.add('long-range-chart'));
+  } else {
+    chartContainers.forEach(c => c.parentElement.classList.remove('long-range-chart'));
+  }
+  
+  // Trigger chart update with new labels
+  setTimeout(updateCharts, 100);
+});
   </script>
 </body>
 </html>
