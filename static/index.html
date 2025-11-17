@@ -355,7 +355,17 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-10px); }
     }
-
+/* Better chart height for week & month views */
+@media (max-width: 640px) {
+  .long-range-chart .chart-container {
+    height: 280px !important;
+  }
+}
+@media (min-width: 641px) {
+  .long-range-chart .chart-container {
+    height: 320px !important;
+  }
+}
     .title-glow {
       text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
     }
