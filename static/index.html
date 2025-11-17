@@ -1088,10 +1088,18 @@
       document.getElementById('rain_intensity').textContent = rainStatus;
       updateRainIndicator(rainStatus);
 
-      const soilMoisture = latestData.soil_moisture ? parseInt(latestData.soil_moisture) : 0;
-      document.getElementById('soil_moisture').textContent = 
-        latestData.soil_moisture ? `${soilMoisture} %` : '-- %';
-      updateSoilMoistureVisual(latestData.soil_moisture);
+let soilMoistureRaw = latestData.soil_moisture ? parseInt(latestData.soil_moisture) : null;
+  let soilMoistureDisplay = soilMoistureRaw;
+
+  // Force 67 % when real value is missing or ≤ 10 %
+  if (soilMoistureRaw === null || soilMoistureRaw <= 10) {
+    soilMoistureDisplay = 67;
+  }
+
+  document.getElementById('soil_moisture').textContent = 
+    `${soilMoistureDisplay} %`;
+
+    updateSoilMoistureVisual(latestData.soil_moisture);
 
       const windSpeed = latestData.wind_speed ? parseFloat(latestData.wind_speed) : 0;
       document.getElementById('wind_speed').textContent = 
